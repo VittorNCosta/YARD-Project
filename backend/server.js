@@ -1,10 +1,9 @@
-const app = require("./app");
-const connectDB = require("./config/database");
+import "dotenv/config";
+import { connectMongo } from "./config/auth.js";
 
-const PORT = 3000;
+async function start() {
+  await connectMongo();
+  console.log("Aplicação pronta");
+}
 
-connectDB();
-
-app.listen(PORT, () => {
-  console.log(`🚛 YARD API rodando na porta ${PORT}`);
-});
+start();
