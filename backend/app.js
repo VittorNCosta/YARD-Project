@@ -1,4 +1,4 @@
-const express = require("express");
+/*const express = require("express");
 const cors = require("cors");
 
 const vehicleRoutes = require("./routes/vehicle.routes");
@@ -17,3 +17,20 @@ app.use("/vehicles", vehicleRoutes);
 app.use("/authorizations", authorizationRoutes);
 
 module.exports = app;
+*/
+import express from "express";
+import cors from "cors";
+
+const app = express();
+
+app.use(cors());
+app.use(express.json());
+
+app.get("/", (req, res) => {
+  res.send("🚛 YARD API funcionando");
+});
+
+export default app;
+
+
+

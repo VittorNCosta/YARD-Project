@@ -1,17 +1,11 @@
-import { MongoClient } from "mongodb";
+import mongoose from "mongoose";
 
-const uri = process.env.MONGO_URI;
-
-if (!uri) {
-  throw new Error("MONGO_URI não definida no .env");
-}
-
-const client = new MongoClient(uri);
-
-export async function connectMongo() {
-  if (!client.topology?.isConnected()) {
-    await client.connect();
-    console.log("MongoDB conectado");
+export async function connectDB() {
+  try {
+    await mongoose.connect(process.env.MONGO_URI);
+    console.log("🔥 MongoDB conectado com sucesso!");
+  } catch (error) {
+    console.error("❌ Erro ao conectar ao MongoDB:", error);
+    process.exit(1);
   }
-  return client;
 }
