@@ -1,4 +1,4 @@
-import { useState } from 'react'
+/*import { useState } from 'react'
 import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
@@ -32,4 +32,24 @@ function App() {
   )
 }
 
-export default App
+export default App*/
+import Header from '../components/Header';
+import Dashboard from '../components/Dashboard';
+import './App.css';
+
+function App() {
+  return (
+    <div className="App">
+      <Header />
+      <main>
+        <Dashboard />
+      </main>
+      <footer className="footer">
+        <p>© 2026 YARD Logística - Sistema de Gerenciamento de Pátio</p>
+        <p>Versão 0.0.1 - Desenvolvimento</p>
+      </footer>
+    </div>
+  );
+}
+
+export default App;
