@@ -1,0 +1,34 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc *)",
+      "Bash(curl -s -w \"\\\\n---HTTP %{http_code}---\\\\n\" http://localhost:3000/api/vehicles)",
+      "Bash(curl -s -X POST http://localhost:3000/api/vehicles -H \"Content-Type: application/json\" -d '{\"plate\":\"TEST-0001\",\"driverName\":\"Smoke Test\",\"driverCpf\":\"111.222.333-44\",\"color\":\"Branco\",\"vehicleType\":\"Truck\",\"weighingRequired\":true,\"activeStatus\":\"Ativo\",\"cargoType\":\"Geral\",\"status\":\"Ativo\"}' -w \"\\\\n---HTTP %{http_code}---\\\\n\")",
+      "Bash(npm run *)",
+      "Bash(curl -s -w \"\\\\n---HTTP %{http_code}---\\\\n\" \"http://localhost:5173/veiculos\" -o /dev/null -w \"HTTP %{http_code}\\\\n\")",
+      "Bash(curl -s \"http://localhost:5173/src/pages/vehicles.tsx\" -o /dev/null -w \"vehicles.tsx HTTP %{http_code}\\\\n\")",
+      "Bash(curl -s \"http://localhost:5173/src/hooks/useVehicles.ts\" -o /dev/null -w \"useVehicles.ts HTTP %{http_code}\\\\n\")",
+      "Bash(curl -s \"http://localhost:5173/src/services/api.ts\" -o /dev/null -w \"api.ts HTTP %{http_code}\\\\n\")",
+      "PowerShell($env:Path = \"C:\\\\Users\\\\vitto\\\\.bun\\\\bin;\" + $env:Path; bun --version)",
+      "PowerShell($env:Path = \"C:\\\\Users\\\\vitto\\\\.bun\\\\bin;\" + $env:Path; Set-Location \"c:\\\\Users\\\\vitto\\\\Área de Trabalho\\\\YardProject\\\\backend\"; bun add fastify @fastify/cors tsyringe reflect-metadata zod i18next 2>&1 | Select-Object -Last 30)",
+      "PowerShell($env:Path = \"C:\\\\Users\\\\vitto\\\\.bun\\\\bin;\" + $env:Path; Set-Location \"c:\\\\Users\\\\vitto\\\\Área de Trabalho\\\\YardProject\\\\backend\"; bun run src/infra/http/server.ts)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3001/api/vehicles)",
+      "Bash(curl -s -w \"\\\\n[HTTP %{http_code}]\\\\n\" http://localhost:3001/api/vehicles)",
+      "Bash(curl -s -w '\\\\n[HTTP %{http_code}]\\\\n' http://localhost:3001/api/vehicles/69e6bcd63e5c55c8c5551cbb)",
+      "Bash(curl -s -w '\\\\n[HTTP %{http_code}]\\\\n' -X PUT http://localhost:3001/api/vehicles/69e6bcd63e5c55c8c5551cbb/status -H 'Content-Type: application/json' -d '{\"status\":\"Inativo\"}')",
+      "Bash(curl -s -w '\\\\n[HTTP %{http_code}]\\\\n' -X DELETE http://localhost:3001/api/vehicles/69e6bcd63e5c55c8c5551cbb)",
+      "PowerShell(Get-NetTCPConnection -LocalPort 3001 -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }; Start-Sleep -Seconds 1; $still = Get-NetTCPConnection -LocalPort 3001 -ErrorAction SilentlyContinue; if \\($null -eq $still\\) { Write-Output \"Port 3001 freed\" } else { Write-Output \"Port still occupied\" })",
+      "Bash(bun install *)",
+      "Bash(bun run *)",
+      "Bash(cat \"/tmp/design-extract/contents/test-yard/README.md\")",
+      "Read(//tmp/design-extract/contents/test-yard/**)",
+      "Bash(npm install *)",
+      "Bash(echo \"EXIT=$?\")",
+      "Bash(npx vite *)",
+      "Bash(grep -v \"^$\")",
+      "Bash(bun upgrade *)",
+      "Bash(xargs grep -l \"buildApp\\\\|FastifyInstance\")",
+      "Bash(bun test:run)"
+    ]
+  }
+}
