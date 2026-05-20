@@ -1,7 +1,33 @@
-import React from 'react';
+import React, { useCallback } from 'react';
+import { NavLink, useLocation } from 'react-router-dom';
+import { LogOut } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 import './Header.css';
 
+const AUTH_ROUTES = new Set<string>(['/login', '/register']);
+
+const getInitials = (name: string): string =>
+  name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join('')
+    .toUpperCase();
+
 const Header: React.FC = () => {
+  const { user, isAdmin, logout } = useAuth();
+  const location = useLocation();
+
+  // Em rotas de autenticação, o layout das páginas já cobre 100vh — não exibimos o Header.
+  if (AUTH_ROUTES.has(location.pathname)) {
+    return null;
+  }
+
+  const handleLogout = useCallback((): void => {
+    void logout();
+  }, [logout]);
+
   return (
     <header className="header">
       <div className="logo-container">
@@ -14,14 +40,43 @@ const Header: React.FC = () => {
         </div>
         <h1 className="company-name">YARD LOGÍSTICA</h1>
       </div>
-      <nav className="nav-menu">
+
+      <nav className="nav-menu" aria-label="Navegação principal">
         <ul>
-          <li><a href="#dashboard">Dashboard</a></li>
+          <li><NavLink to="/" end>Dashboard</NavLink></li>
           <li><a href="#estoque">Estoque</a></li>
           <li><a href="#movimentacoes">Movimentações</a></li>
           <li><a href="#relatorios">Relatórios</a></li>
+          <li><NavLink to="/veiculos">Veículos</NavLink></li>
+          {isAdmin && (
+            <li><NavLink to="/usuarios">Usuários</NavLink></li>
+          )}
         </ul>
       </nav>
+
+      {user && (
+        <div className="header-user">
+          <div className="header-user__info">
+            <span className="header-user__name">{user.name}</span>
+            <span className="header-user__role">
+              {user.role === 'admin' ? 'Administrador' : 'Usuário'}
+            </span>
+          </div>
+          <div className="header-user__avatar" aria-hidden="true">
+            {getInitials(user.name)}
+          </div>
+          <button
+            type="button"
+            className="header-user__logout"
+            onClick={handleLogout}
+            aria-label="Sair"
+            title="Sair"
+          >
+            <LogOut size={16} />
+            <span>Sair</span>
+          </button>
+        </div>
+      )}
     </header>
   );
 };
