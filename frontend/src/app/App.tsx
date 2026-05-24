@@ -4,6 +4,7 @@ import Header from '../components/Header';
 import Dashboard from '../components/Dashboard';
 import Veiculos from '../pages/vehicles';
 import Authorizations from '../pages/Authorizations';
+import AuthorizationDetail from '../pages/AuthorizationDetail';
 import Docks from '../pages/Docks';
 import Login from '../pages/Login';
 import Register from '../pages/Register';
@@ -33,6 +34,7 @@ function AppShell() {
           <Route element={<ProtectedRoute />}>
             <Route path="/" element={<Dashboard />} />
             <Route path="/autorizacoes" element={<Authorizations />} />
+            <Route path="/autorizacoes/:id" element={<AuthorizationDetail />} />
             <Route path="/docas" element={<Docks />} />
             <Route path="/veiculos" element={<Veiculos />} />
 

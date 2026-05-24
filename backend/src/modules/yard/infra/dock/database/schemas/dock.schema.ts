@@ -19,7 +19,6 @@ const dockSchema = new Schema<DockDocument>(
             type: String,
             required: true,
             unique: true,
-            index: true,
         },
         name: { type: String },
         status: {
@@ -36,4 +35,3 @@ const dockSchema = new Schema<DockDocument>(
 export const DockModel: Model<DockDocument> =
     (mongoose.models.Dock as Model<DockDocument> | undefined) ??
     mongoose.model<DockDocument>("Dock", dockSchema);
-

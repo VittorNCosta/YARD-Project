@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "tsx watch src/infra/server.ts",
     "start": "tsx src/infra/server.ts",
+    "seed:docks": "tsx src/scripts/seed-docks.ts",
     "build": "tsc -p tsconfig.json",
     "test": "vitest --config vitest.config.ts",
     "test:run": "vitest run --config vitest.config.ts",

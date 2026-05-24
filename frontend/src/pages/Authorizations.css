@@ -68,6 +68,14 @@
   overflow: hidden;
 }
 
+.authorization-detail-section {
+  overflow: visible;
+}
+
+.movement-detail-page-content {
+  padding: var(--space-6);
+}
+
 .authorizations-section .section-header {
   padding: var(--space-5) var(--space-6);
   border-bottom: 1px solid var(--color-neutral-200);

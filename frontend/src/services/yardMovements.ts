@@ -22,12 +22,19 @@ export interface YardMovementEventData {
   departureDate?: string;
 }
 
+export interface YardMovementActor {
+  id?: string;
+  name?: string;
+  email?: string;
+}
+
 export interface YardMovementEvent {
   type: YardMovementEventType;
   fromStatus?: YardMovementStatus;
   toStatus: YardMovementStatus;
   statusReason?: string;
   createdBy?: string;
+  createdByUser?: YardMovementActor;
   createdAt: string;
   data?: YardMovementEventData;
 }
@@ -50,6 +57,9 @@ export interface YardMovement {
   createdBy?: string;
   releasedBy?: string;
   cancelledBy?: string;
+  createdByUser?: YardMovementActor;
+  releasedByUser?: YardMovementActor;
+  cancelledByUser?: YardMovementActor;
   statusReason?: string;
   events?: YardMovementEvent[];
   createdAt: string;
@@ -101,6 +111,13 @@ export function yardMovementStatusLabel(status: YardMovementStatus): string {
   };
 
   return labels[status];
+}
+
+export function yardMovementActorLabel(
+  actor?: YardMovementActor,
+  fallback?: string
+): string {
+  return actor?.name ?? actor?.email ?? fallback ?? "-";
 }
 
 export function listYardMovements(): Promise<YardMovement[]> {

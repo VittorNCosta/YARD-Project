@@ -65,8 +65,11 @@ Campos principais:
 - `dock`
 - `arrivalDate`
 - `departureDate`
+- `createdBy`
 - `releasedBy`
+- `cancelledBy`
 - `statusReason`
+- `events`
 - `createdAt`
 - `updatedAt`
 
@@ -81,32 +84,36 @@ Regras:
 
 Responsavel pela capacidade operacional de docas.
 
-No MVP, a ocupacao da doca e derivada de `YardMovement` em status `DOCKED`.
-Uma entidade propria de doca pode entrar depois para manutencao, capacidade por
-unidade e cadastro operacional.
+No MVP, `Dock` ja e uma entidade propria. A ocupacao operacional continua
+derivada de `YardMovement` em status `DOCKED`, enquanto cadastro, ativacao e
+manutencao ficam na collection `docks`.
 
 Campos principais:
 
 - `code`
+- `name`
 - `status`
-- `currentMovementId`
+- `maintenanceReason`
 - `createdAt`
 - `updatedAt`
 
 Status:
 
-- `AVAILABLE`
-- `OCCUPIED`
+- `ACTIVE`
+- `INACTIVE`
 - `MAINTENANCE`
 
 Regras:
 
+- Codigo da doca deve ser unico.
 - Uma doca ocupada nao pode receber outra movimentacao.
-- Doca em manutencao nao pode receber movimentacao.
-- Ao mover uma movimentacao para `DOCKED`, a doca deve ficar ocupada.
-- Ao sair de `DOCKED`, a doca deve ser liberada.
-- Enquanto nao houver entidade propria de doca, somente movimentacoes em
-  `DOCKED` ocupam doca; ao ir para `AWAITING_RELEASE`, o campo `dock` e limpo.
+- Somente doca `ACTIVE` pode receber movimentacao.
+- Doca `INACTIVE` ou `MAINTENANCE` nao pode receber movimentacao.
+- Ao mover uma movimentacao para `DOCKED`, a doca e considerada ocupada.
+- Ao sair de `DOCKED` para `AWAITING_RELEASE`, o campo `dock` e limpo e a doca
+  fica disponivel para nova movimentacao.
+- O cadastro inicial de docas pode ser criado com `npm run seed:docks` dentro
+  de `backend`.
 
 ## Status operacional da movimentacao
 
@@ -150,6 +157,8 @@ Status finais:
 - Exige `vehicleId`, `plateSnapshot`, `driverName` e `cargoType`.
 - Status inicial padrao: `WAITING_QUEUE`.
 - `arrivalDate` deve ser preenchida na criacao.
+- `createdBy` deve receber o usuario logado.
+- Um evento `CREATED` deve ser registrado em `events`.
 - `departureDate`, `entryWeight`, `exitWeight`, `dock` e `releasedBy` iniciam vazios.
 
 ### `GATE_CHECK` para `ENTRY_WEIGHING`
@@ -185,12 +194,14 @@ Status finais:
 
 - Permitido quando `weighingRequired` for `false`.
 - Exige `releasedBy`.
+- `releasedBy` deve ser preenchido automaticamente com o usuario logado.
 
 ### `EXIT_WEIGHING` para `RELEASED`
 
 - Exige `exitWeight`.
 - `exitWeight` deve ser maior que zero.
 - Exige `releasedBy`.
+- `releasedBy` deve ser preenchido automaticamente com o usuario logado.
 
 ### `RELEASED` para `FINISHED`
 
@@ -203,6 +214,10 @@ Status finais:
 - `REJECTED` so deve ocorrer durante validacao de portaria.
 - Ambos exigem `statusReason`.
 - `statusReason` deve registrar o motivo operacional informado pelo usuario.
+- `CANCELLED` deve registrar `cancelledBy` com o usuario logado.
+- Cada alteracao de status deve registrar um evento `STATUS_CHANGED` em
+  `events`, contendo status anterior, status novo, usuario, data e dados
+  operacionais informados na transicao.
 
 ## Regras de consulta e dashboard
 
@@ -223,7 +238,6 @@ veiculos:
 Nao implementar ainda:
 
 - Agendamento antecipado.
-- Auditoria detalhada por evento.
 - Controle multi-unidade.
 - Integracao com balanca fisica.
 - OCR/leitura automatica de placa.

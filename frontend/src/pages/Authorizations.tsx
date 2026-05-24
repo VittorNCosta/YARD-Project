@@ -1,4 +1,5 @@
 import React, { useCallback, useMemo, useState } from "react";
+import { Link, useLocation, useSearchParams } from "react-router-dom";
 import {
   AlertTriangle,
   ArrowRight,
@@ -17,7 +18,6 @@ import { useYardMovements } from "../hooks/useYardMovements";
 import {
   isOpenYardMovement,
   yardMovementStatusLabel,
-  type YardMovementEvent,
   type UpdateYardMovementStatusInput,
   type YardMovement,
   type YardMovementStatus,
@@ -287,57 +287,10 @@ function buildActionPayload(
   return payload;
 }
 
-function getTimelineEvents(movement: YardMovement): YardMovementEvent[] {
-  const events =
-    movement.events && movement.events.length > 0
-      ? movement.events
-      : [
-          {
-            type: "CREATED" as const,
-            toStatus: movement.status,
-            createdBy: movement.createdBy,
-            createdAt: movement.createdAt,
-          },
-        ];
-
-  return [...events].sort(
-    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-  );
-}
-
-function getTimelineTitle(event: YardMovementEvent): string {
-  if (event.type === "CREATED") {
-    return "Autorizacao criada";
-  }
-
-  const from = event.fromStatus
-    ? yardMovementStatusLabel(event.fromStatus)
-    : "Inicio";
-  const to = yardMovementStatusLabel(event.toStatus);
-  return `${from} para ${to}`;
-}
-
-function getTimelineDetails(event: YardMovementEvent): string[] {
-  const details: string[] = [];
-
-  if (event.data?.dock) {
-    details.push(`Doca: ${event.data.dock}`);
-  }
-  if (event.data?.entryWeight !== undefined) {
-    details.push(`Peso entrada: ${formatWeight(event.data.entryWeight)}`);
-  }
-  if (event.data?.exitWeight !== undefined) {
-    details.push(`Peso saida: ${formatWeight(event.data.exitWeight)}`);
-  }
-  if (event.statusReason) {
-    details.push(`Motivo: ${event.statusReason}`);
-  }
-
-  return details;
-}
-
 const Authorizations: React.FC = () => {
   const toast = useToast();
+  const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const {
     vehicles,
     loading: vehiclesLoading,
@@ -364,12 +317,6 @@ const Authorizations: React.FC = () => {
   const [formData, setFormData] = useState<AuthorizationFormData>(INITIAL_FORM);
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState<boolean>(false);
-  const [searchTerm, setSearchTerm] = useState<string>("");
-  const [statusFilter, setStatusFilter] = useState<string>("abertas");
-  const [dateFromFilter, setDateFromFilter] = useState<string>("");
-  const [dateToFilter, setDateToFilter] = useState<string>("");
-  const [reasonFilter, setReasonFilter] = useState<string>("");
-  const [detailTarget, setDetailTarget] = useState<YardMovement | null>(null);
   const [actionTarget, setActionTarget] = useState<YardMovement | null>(null);
   const [actionDefinition, setActionDefinition] =
     useState<MovementAction | null>(null);
@@ -377,6 +324,30 @@ const Authorizations: React.FC = () => {
     useState<MovementActionFormData>(INITIAL_ACTION_FORM);
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionBusyId, setActionBusyId] = useState<string | null>(null);
+
+  const searchTerm = searchParams.get("q") ?? "";
+  const statusFilter = searchParams.get("status") ?? "abertas";
+  const dateFromFilter = searchParams.get("from") ?? "";
+  const dateToFilter = searchParams.get("to") ?? "";
+  const reasonFilter = searchParams.get("reason") ?? "";
+
+  const updateFilter = useCallback(
+    (key: string, value: string, defaultValue = "") => {
+      setSearchParams(
+        (current) => {
+          const next = new URLSearchParams(current);
+          if (!value || value === defaultValue) {
+            next.delete(key);
+          } else {
+            next.set(key, value);
+          }
+          return next;
+        },
+        { replace: true }
+      );
+    },
+    [setSearchParams]
+  );
 
   const availableVehicles = useMemo(
     () =>
@@ -718,7 +689,7 @@ const Authorizations: React.FC = () => {
                 className="form-input search-input"
                 placeholder="Buscar por placa ou motorista..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => updateFilter("q", e.target.value)}
                 aria-label="Buscar autorizacoes"
               />
             </div>
@@ -726,20 +697,22 @@ const Authorizations: React.FC = () => {
               type="date"
               className="form-input date-filter"
               value={dateFromFilter}
-              onChange={(e) => setDateFromFilter(e.target.value)}
+              onChange={(e) => updateFilter("from", e.target.value)}
               aria-label="Data inicial"
             />
             <input
               type="date"
               className="form-input date-filter"
               value={dateToFilter}
-              onChange={(e) => setDateToFilter(e.target.value)}
+              onChange={(e) => updateFilter("to", e.target.value)}
               aria-label="Data final"
             />
             <select
               className="form-input status-filter"
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              onChange={(e) =>
+                updateFilter("status", e.target.value, "abertas")
+              }
               aria-label="Filtrar por status"
             >
               <option value="abertas">Abertas</option>
@@ -759,7 +732,7 @@ const Authorizations: React.FC = () => {
               className="form-input reason-filter"
               placeholder="Motivo..."
               value={reasonFilter}
-              onChange={(e) => setReasonFilter(e.target.value)}
+              onChange={(e) => updateFilter("reason", e.target.value)}
               aria-label="Filtrar por motivo"
             />
           </div>
@@ -856,13 +829,13 @@ const Authorizations: React.FC = () => {
                       <td>{formatWeight(movement.exitWeight)}</td>
                       <td>
                         <div className="movement-actions">
-                          <button
-                            type="button"
+                          <Link
+                            to={`/autorizacoes/${movement.id}${location.search}`}
+                            state={{ listSearch: location.search }}
                             className="btn btn--secondary btn--table-action"
-                            onClick={() => setDetailTarget(movement)}
                           >
                             <Eye size={14} /> Detalhes
-                          </button>
+                          </Link>
                           {movementAction && (
                             <button
                               type="button"
@@ -1038,106 +1011,6 @@ const Authorizations: React.FC = () => {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
-
-      {detailTarget && (
-        <div className="modal-overlay" onClick={() => setDetailTarget(null)}>
-          <div
-            className="modal-card modal-card--detail"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="modal-movement-detail-title"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="modal-header">
-              <h3 id="modal-movement-detail-title">
-                Movimentacao - {detailTarget.plateSnapshot}
-              </h3>
-              <button
-                className="btn btn--icon modal-close"
-                onClick={() => setDetailTarget(null)}
-                aria-label="Fechar detalhes"
-              >
-                <X />
-              </button>
-            </div>
-
-            <div className="modal-form">
-              <div className="movement-detail-summary">
-                <span className="placa">{detailTarget.plateSnapshot}</span>
-                <span>{detailTarget.driverName}</span>
-                <span
-                  className={`status-badge status-badge--${statusToVariant(
-                    yardMovementStatusLabel(detailTarget.status)
-                  )}`}
-                >
-                  {yardMovementStatusLabel(detailTarget.status)}
-                </span>
-              </div>
-
-              <div className="movement-detail-grid">
-                <div>
-                  <span>Criado por</span>
-                  <strong>{detailTarget.createdBy ?? "-"}</strong>
-                </div>
-                <div>
-                  <span>Liberado por</span>
-                  <strong>{detailTarget.releasedBy ?? "-"}</strong>
-                </div>
-                <div>
-                  <span>Cancelado por</span>
-                  <strong>{detailTarget.cancelledBy ?? "-"}</strong>
-                </div>
-                <div>
-                  <span>Chegada</span>
-                  <strong>{formatDate(detailTarget.arrivalDate)}</strong>
-                </div>
-                <div>
-                  <span>Doca</span>
-                  <strong>{detailTarget.dock ?? "-"}</strong>
-                </div>
-                <div>
-                  <span>Motivo</span>
-                  <strong>{detailTarget.statusReason ?? "-"}</strong>
-                </div>
-              </div>
-
-              <div className="timeline">
-                <h4>Linha do tempo</h4>
-                {getTimelineEvents(detailTarget).map((event, index) => {
-                  const details = getTimelineDetails(event);
-                  return (
-                    <div
-                      className="timeline-item"
-                      key={`${event.createdAt}-${index}`}
-                    >
-                      <div className="timeline-marker" aria-hidden="true" />
-                      <div className="timeline-content">
-                        <div className="timeline-heading">
-                          <strong>{getTimelineTitle(event)}</strong>
-                          <span>{formatDate(event.createdAt)}</span>
-                        </div>
-                        <div className="timeline-meta">
-                          <span>Usuario: {event.createdBy ?? "-"}</span>
-                          <span>
-                            Status: {yardMovementStatusLabel(event.toStatus)}
-                          </span>
-                        </div>
-                        {details.length > 0 && (
-                          <div className="timeline-details">
-                            {details.map((detail) => (
-                              <span key={detail}>{detail}</span>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
           </div>
         </div>
       )}

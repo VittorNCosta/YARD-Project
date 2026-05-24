@@ -6,6 +6,7 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import { container } from "tsyringe";
 
 import { findYardMovementByIdParamsSchema } from "./find-yard-movement-by-id.schema";
+import { loadYardMovementActors } from "../yard-movement-actor-loader";
 
 export class FindYardMovementByIdController {
     async handle(request: FastifyRequest, reply: FastifyReply): Promise<void> {
@@ -16,10 +17,11 @@ export class FindYardMovementByIdController {
 
         const useCase = container.resolve(FindYardMovementByIdUseCase);
         const yardMovement = await useCase.execute({ id });
+        const actors = await loadYardMovementActors([yardMovement]);
 
         reply.status(HttpStatusCode.OK).send({
             success: true,
-            data: YardMovementPresenter.toHTTP(yardMovement),
+            data: YardMovementPresenter.toHTTP(yardMovement, actors),
         });
     }
 }

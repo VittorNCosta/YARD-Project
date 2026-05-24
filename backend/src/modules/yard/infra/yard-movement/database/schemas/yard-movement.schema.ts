@@ -70,7 +70,7 @@ const yardMovementEventSchema = new Schema<YardMovementEvent>(
 const yardMovementSchema = new Schema<YardMovementDocument>(
     {
         vehicleId: { type: String, required: true, index: true },
-        plateSnapshot: { type: String, required: true, index: true },
+        plateSnapshot: { type: String, required: true },
         driverName: { type: String, required: true },
         cargoType: { type: String, required: true },
         status: {

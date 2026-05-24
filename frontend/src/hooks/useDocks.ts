@@ -30,6 +30,9 @@ function extractMessage(err: unknown): string {
     if (err.message === "dock.not-found") {
       return "Doca nao encontrada.";
     }
+    if (err.message === "dock.occupied") {
+      return "Esta doca esta ocupada e nao pode ser alterada ou removida agora.";
+    }
     return err.message;
   }
   if (err instanceof Error) return err.message;
@@ -124,4 +127,3 @@ export function useDocks(): UseDocksResult {
     [docks, activeDocks, loading, error, refetch, create, update, remove]
   );
 }
-

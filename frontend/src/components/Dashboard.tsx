@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import {
   AlertTriangle,
   Calendar,
@@ -9,9 +9,12 @@ import {
   Truck,
   Warehouse,
 } from "lucide-react";
+import { useDocks } from "../hooks/useDocks";
 import { useYardMovements } from "../hooks/useYardMovements";
+import { dockStatusLabel } from "../services/docks";
 import {
   isOpenYardMovement,
+  yardMovementActorLabel,
   yardMovementStatusLabel,
   type YardMovement,
 } from "../services/yardMovements";
@@ -19,7 +22,6 @@ import { statusToSlug, statusToVariant } from "../utils/status";
 import "./Dashboard.css";
 
 const TOTAL_VAGAS = 40;
-const DOCK_CODES = ["Doca 1", "Doca 2", "Doca 3", "Doca 4", "Doca 5"];
 
 function formatDate(value?: string): string {
   if (!value) return "-";
@@ -54,6 +56,17 @@ function isCreatedInLast24Hours(movement: YardMovement): boolean {
   return Date.now() - createdAt <= 24 * 60 * 60 * 1000;
 }
 
+function isFinishedToday(movement: YardMovement): boolean {
+  if (movement.status !== "FINISHED" || !movement.departureDate) return false;
+  const departure = new Date(movement.departureDate);
+  const today = new Date();
+  return (
+    departure.getFullYear() === today.getFullYear() &&
+    departure.getMonth() === today.getMonth() &&
+    departure.getDate() === today.getDate()
+  );
+}
+
 function isSameStatusFilter(
   movement: YardMovement,
   filter: string
@@ -66,6 +79,12 @@ function isSameStatusFilter(
 const Dashboard: React.FC = () => {
   const [filtroStatus, setFiltroStatus] = useState<string>("todos");
   const { movements, loading, error, refetch } = useYardMovements();
+  const {
+    docks,
+    loading: docksLoading,
+    error: docksError,
+    refetch: refetchDocks,
+  } = useDocks();
 
   const activeMovements = useMemo(
     () => movements.filter((movement) => isOpenYardMovement(movement.status)),
@@ -83,6 +102,7 @@ const Dashboard: React.FC = () => {
       (movement) => movement.status === "DOCKED"
     ).length;
     const movimentacoesHoje = movements.filter(isCreatedInLast24Hours).length;
+    const finalizadosHoje = movements.filter(isFinishedToday).length;
     const tempoTotal = activeMovements.reduce(
       (total, movement) => total + minutesSince(movement.arrivalDate),
       0
@@ -103,6 +123,7 @@ const Dashboard: React.FC = () => {
       totalVagas: TOTAL_VAGAS,
       tempoMedioEspera,
       movimentacoesHoje,
+      finalizadosHoje,
     };
   }, [activeMovements, movements]);
 
@@ -129,6 +150,12 @@ const Dashboard: React.FC = () => {
     }
     return map;
   }, [activeMovements]);
+
+  const errorMessage = error ?? docksError;
+
+  const refreshAll = useCallback(async () => {
+    await Promise.all([refetch(), refetchDocks()]);
+  }, [refetch, refetchDocks]);
 
   return (
     <div className="dashboard">
@@ -163,7 +190,7 @@ const Dashboard: React.FC = () => {
           <div className="kpi-content">
             <h3>Nas Docas</h3>
             <p className="kpi-value">{metrics.veiculosNaDoca}</p>
-            <span>Em operacao</span>
+            <span>{docks.length} docas cadastradas</span>
           </div>
         </div>
 
@@ -188,20 +215,20 @@ const Dashboard: React.FC = () => {
         <div className="kpi-card">
           <div className="kpi-icon" aria-hidden="true"><ClipboardList /></div>
           <div className="kpi-content">
-            <h3>Movimentacoes</h3>
-            <p className="kpi-value">{metrics.movimentacoesHoje}</p>
-            <span>Nas ultimas 24h</span>
+            <h3>Finalizados Hoje</h3>
+            <p className="kpi-value">{metrics.finalizadosHoje}</p>
+            <span>{metrics.movimentacoesHoje} criadas em 24h</span>
           </div>
         </div>
       </div>
 
-      {error && (
+      {errorMessage && (
         <div className="alertas-section" role="alert">
           <h3><AlertTriangle aria-hidden="true" /> Falha ao carregar patio</h3>
           <div className="alertas-list">
             <div className="alerta warning">
-              <span>{error}</span>
-              <button className="btn btn--secondary" onClick={() => void refetch()}>
+              <span>{errorMessage}</span>
+              <button className="btn btn--secondary" onClick={() => void refreshAll()}>
                 Tentar novamente
               </button>
             </div>
@@ -313,7 +340,12 @@ const Dashboard: React.FC = () => {
                       <td>{movement.dock ?? "-"}</td>
                       <td>{formatDate(movement.arrivalDate)}</td>
                       <td>{formatDate(movement.departureDate)}</td>
-                      <td>{movement.releasedBy ?? "-"}</td>
+                      <td>
+                        {yardMovementActorLabel(
+                          movement.releasedByUser,
+                          movement.releasedBy
+                        )}
+                      </td>
                       <td>{movement.processType ?? "-"}</td>
                       <td>{formatWeight(movement.entryWeight)}</td>
                       <td>{formatWeight(movement.exitWeight)}</td>
@@ -329,22 +361,47 @@ const Dashboard: React.FC = () => {
       <div className="docas-section">
         <h3><Warehouse aria-hidden="true" /> Status das Docas</h3>
         <div className="docas-grid">
-          {DOCK_CODES.map((dock) => {
-            const movement = dockMovements.get(dock);
-            return (
-              <div key={dock} className={`doca-card ${movement ? "ocupada" : "disponivel"}`}>
-                <h4>{dock}</h4>
-                {movement ? (
-                  <>
-                    <p><Truck aria-hidden="true" /> {movement.plateSnapshot}</p>
-                    <span>{movement.processType ?? "Operacao em andamento"}</span>
-                  </>
-                ) : (
-                  <p><CheckCircle2 aria-hidden="true" /> Disponivel</p>
-                )}
-              </div>
-            );
-          })}
+          {docksLoading ? (
+            <div className="doca-card neutra">
+              <h4>Carregando</h4>
+              <p><Clock aria-hidden="true" /> Consultando docas...</p>
+            </div>
+          ) : docks.length === 0 ? (
+            <div className="doca-card neutra">
+              <h4>Sem docas</h4>
+              <p><AlertTriangle aria-hidden="true" /> Cadastre docas para operar.</p>
+            </div>
+          ) : (
+            docks.map((dock) => {
+              const movement = dockMovements.get(dock.code);
+              const cardStatus = movement
+                ? "ocupada"
+                : dock.status === "ACTIVE"
+                  ? "disponivel"
+                  : dock.status === "MAINTENANCE"
+                    ? "manutencao"
+                    : "inativa";
+
+              return (
+                <div key={dock.id} className={`doca-card ${cardStatus}`}>
+                  <h4>{dock.code}</h4>
+                  {movement ? (
+                    <>
+                      <p><Truck aria-hidden="true" /> {movement.plateSnapshot}</p>
+                      <span>{movement.processType ?? "Operacao em andamento"}</span>
+                    </>
+                  ) : dock.status === "ACTIVE" ? (
+                    <p><CheckCircle2 aria-hidden="true" /> Disponivel</p>
+                  ) : (
+                    <>
+                      <p><AlertTriangle aria-hidden="true" /> {dockStatusLabel(dock.status)}</p>
+                      <span>{dock.maintenanceReason ?? "Fora de operacao"}</span>
+                    </>
+                  )}
+                </div>
+              );
+            })
+          )}
         </div>
       </div>
     </div>
