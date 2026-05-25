@@ -1,0 +1,83 @@
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell",
+            "args": [
+              "-NoProfile",
+              "-ExecutionPolicy",
+              "Bypass",
+              "-File",
+              "${CLAUDE_PROJECT_DIR}/.claude/hooks/require-agents-orchestrator-context.ps1"
+            ],
+            "timeout": 10,
+            "statusMessage": "Validating Agents Orchestrator routing"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell",
+            "args": [
+              "-NoProfile",
+              "-ExecutionPolicy",
+              "Bypass",
+              "-File",
+              "${CLAUDE_PROJECT_DIR}/.claude/hooks/enforce-agents-orchestrator-pre-tool-use.ps1"
+            ],
+            "timeout": 10,
+            "statusMessage": "Checking Agents Orchestrator gate"
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "matcher": "Agents Orchestrator",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell",
+            "args": [
+              "-NoProfile",
+              "-ExecutionPolicy",
+              "Bypass",
+              "-File",
+              "${CLAUDE_PROJECT_DIR}/.claude/hooks/mark-agents-orchestrator-start.ps1"
+            ],
+            "timeout": 10,
+            "statusMessage": "Opening Agents Orchestrator gate"
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "matcher": "Agents Orchestrator",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell",
+            "args": [
+              "-NoProfile",
+              "-ExecutionPolicy",
+              "Bypass",
+              "-File",
+              "${CLAUDE_PROJECT_DIR}/.claude/hooks/mark-agents-orchestrator-stop.ps1"
+            ],
+            "timeout": 10,
+            "statusMessage": "Closing Agents Orchestrator gate"
+          }
+        ]
+      }
+    ]
+  }
+}

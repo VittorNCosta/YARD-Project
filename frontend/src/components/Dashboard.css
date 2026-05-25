@@ -176,6 +176,12 @@
   border-left-color: var(--color-error);
 }
 
+.doca-card.inativa,
+.doca-card.neutra {
+  background: var(--color-neutral-100);
+  border-left-color: var(--color-neutral-400);
+}
+
 .doca-card h4 {
   margin: 0 0 var(--space-2) 0;
   color: var(--color-neutral-700);

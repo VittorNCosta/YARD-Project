@@ -1,0 +1,25 @@
+.docks-page .docks-alert {
+  margin-bottom: var(--space-4);
+}
+
+.docks-page .docks-table {
+  min-width: 920px;
+}
+
+.dock-reason-cell {
+  max-width: 300px;
+  color: var(--color-neutral-500);
+  white-space: normal;
+}
+
+.dock-maintenance-input {
+  min-height: 96px;
+  resize: vertical;
+}
+
+@media (max-width: 767px) {
+  .docks-page .veiculos-page-header {
+    align-items: stretch;
+  }
+}
+

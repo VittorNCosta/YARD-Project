@@ -6,3 +6,6 @@ node_modules/
 
 # Logs
 npm-debug.log*
+
+# Claude hook runtime state
+.claude/hooks/state/

@@ -1,202 +1,282 @@
-import React, { useState } from 'react';
-import { statusToSlug, statusToVariant } from '../utils/status';
-import './Dashboard.css';
+import React, { useCallback, useMemo, useState } from "react";
+import {
+  AlertTriangle,
+  Calendar,
+  CheckCircle2,
+  ClipboardList,
+  Clock,
+  MapPin,
+  Truck,
+  Warehouse,
+} from "lucide-react";
+import { useDocks } from "../hooks/useDocks";
+import { useYardMovements } from "../hooks/useYardMovements";
+import { dockStatusLabel } from "../services/docks";
+import {
+  isOpenYardMovement,
+  yardMovementActorLabel,
+  yardMovementStatusLabel,
+  type YardMovement,
+} from "../services/yardMovements";
+import { statusToSlug, statusToVariant } from "../utils/status";
+import "./Dashboard.css";
+
+const TOTAL_VAGAS = 40;
+
+function formatDate(value?: string): string {
+  if (!value) return "-";
+  return new Intl.DateTimeFormat("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(value));
+}
+
+function formatWeight(value?: number): string {
+  if (value === undefined) return "-";
+  return `${new Intl.NumberFormat("pt-BR").format(value)} kg`;
+}
+
+function formatDuration(minutes: number): string {
+  if (minutes < 60) return `${minutes}min`;
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  return rest > 0 ? `${hours}h ${rest}min` : `${hours}h`;
+}
+
+function minutesSince(date: string): number {
+  const diff = Date.now() - new Date(date).getTime();
+  return Math.max(0, Math.round(diff / 60000));
+}
+
+function isCreatedInLast24Hours(movement: YardMovement): boolean {
+  const createdAt = new Date(movement.createdAt).getTime();
+  return Date.now() - createdAt <= 24 * 60 * 60 * 1000;
+}
+
+function isFinishedToday(movement: YardMovement): boolean {
+  if (movement.status !== "FINISHED" || !movement.departureDate) return false;
+  const departure = new Date(movement.departureDate);
+  const today = new Date();
+  return (
+    departure.getFullYear() === today.getFullYear() &&
+    departure.getMonth() === today.getMonth() &&
+    departure.getDate() === today.getDate()
+  );
+}
+
+function isSameStatusFilter(
+  movement: YardMovement,
+  filter: string
+): boolean {
+  if (filter === "todos") return true;
+  if (filter === "DOCKED") return movement.status === "DOCKED";
+  return movement.status === filter;
+}
 
 const Dashboard: React.FC = () => {
-  const [filtroStatus, setFiltroStatus] = useState<string>('todos');
+  const [filtroStatus, setFiltroStatus] = useState<string>("todos");
+  const { movements, loading, error, refetch } = useYardMovements();
+  const {
+    docks,
+    loading: docksLoading,
+    error: docksError,
+    refetch: refetchDocks,
+  } = useDocks();
 
-  const metrics = {
-    veiculosNoPatio: 23,
-    veiculosNaFila: 7,
-    veiculosNaDoca: 5,
-    vagasDisponiveis: 12,
-    totalVagas: 40,
-    tempoMedioEspera: '45min',
-    movimentacoesHoje: 42
-  };
+  const activeMovements = useMemo(
+    () => movements.filter((movement) => isOpenYardMovement(movement.status)),
+    [movements]
+  );
 
-  const veiculosPatio = [
-    {
-      id: 1,
-      placa: "ABC-1234",
-      status: "Pátio",
-      dataChegada: "16/02/2026 08:30",
-      dataSaida: "-",
-      liberadoPor: "João Silva",
-      tipoProcesso: "Carga",
-      pesoEntrada: "12.500 kg",
-      pesoSaida: "-",
-      doca: "-"
-    },
-    {
-      id: 2,
-      placa: "XYZ-5678",
-      status: "Doca 3",
-      dataChegada: "16/02/2026 09:15",
-      dataSaida: "-",
-      liberadoPor: "Maria Santos",
-      tipoProcesso: "Descarga",
-      pesoEntrada: "22.300 kg",
-      pesoSaida: "8.400 kg",
-      doca: "3"
-    },
-    {
-      id: 3,
-      placa: "JKL-9012",
-      status: "Fila",
-      dataChegada: "16/02/2026 09:45",
-      dataSaida: "-",
-      liberadoPor: "Carlos Oliveira",
-      tipoProcesso: "Carga",
-      pesoEntrada: "-",
-      pesoSaida: "-",
-      doca: "-"
-    },
-    {
-      id: 4,
-      placa: "MNO-3456",
-      status: "Doca 1",
-      dataChegada: "16/02/2026 07:20",
-      dataSaida: "-",
-      liberadoPor: "Ana Rodrigues",
-      tipoProcesso: "Descarga",
-      pesoEntrada: "18.750 kg",
-      pesoSaida: "18.750 kg",
-      doca: "1"
-    },
-    {
-      id: 5,
-      placa: "PQR-7890",
-      status: "Pátio",
-      dataChegada: "15/02/2026 22:10",
-      dataSaida: "-",
-      liberadoPor: "Pedro Costa",
-      tipoProcesso: "Aguardando",
-      pesoEntrada: "9.800 kg",
-      pesoSaida: "-",
-      doca: "-"
-    },
-    {
-      id: 6,
-      placa: "STU-1234",
-      status: "Finalizado",
-      dataChegada: "15/02/2026 14:30",
-      dataSaida: "16/02/2026 10:15",
-      liberadoPor: "Lucia Mendes",
-      tipoProcesso: "Carga/Descarga",
-      pesoEntrada: "15.200 kg",
-      pesoSaida: "15.200 kg",
-      doca: "2"
-    },
-  ];
+  const metrics = useMemo(() => {
+    const veiculosNaFila = movements.filter(
+      (movement) => movement.status === "WAITING_QUEUE"
+    ).length;
+    const veiculosNoPatio = movements.filter(
+      (movement) => movement.status === "YARD"
+    ).length;
+    const veiculosNaDoca = movements.filter(
+      (movement) => movement.status === "DOCKED"
+    ).length;
+    const movimentacoesHoje = movements.filter(isCreatedInLast24Hours).length;
+    const finalizadosHoje = movements.filter(isFinishedToday).length;
+    const tempoTotal = activeMovements.reduce(
+      (total, movement) => total + minutesSince(movement.arrivalDate),
+      0
+    );
+    const tempoMedioEspera =
+      activeMovements.length > 0
+        ? formatDuration(Math.round(tempoTotal / activeMovements.length))
+        : "0min";
 
-  const veiculosFiltrados = filtroStatus === 'todos'
-    ? veiculosPatio
-    : veiculosPatio.filter(v => v.status.toLowerCase().includes(filtroStatus.toLowerCase()));
+    return {
+      veiculosNaFila,
+      veiculosNoPatio,
+      veiculosNaDoca,
+      vagasDisponiveis: Math.max(
+        0,
+        TOTAL_VAGAS - veiculosNoPatio - veiculosNaDoca
+      ),
+      totalVagas: TOTAL_VAGAS,
+      tempoMedioEspera,
+      movimentacoesHoje,
+      finalizadosHoje,
+    };
+  }, [activeMovements, movements]);
 
-  const ocupacaoPatio = (metrics.veiculosNoPatio + metrics.veiculosNaDoca) / metrics.totalVagas * 100;
+  const veiculosFiltrados = useMemo(
+    () =>
+      movements.filter((movement) =>
+        isSameStatusFilter(movement, filtroStatus)
+      ),
+    [movements, filtroStatus]
+  );
+
+  const ocupacaoPatio =
+    ((metrics.veiculosNoPatio + metrics.veiculosNaDoca) /
+      metrics.totalVagas) *
+    100;
   const ocupacaoPatioInt = Math.round(ocupacaoPatio);
+
+  const dockMovements = useMemo(() => {
+    const map = new Map<string, YardMovement>();
+    for (const movement of activeMovements) {
+      if (movement.status === "DOCKED" && movement.dock) {
+        map.set(movement.dock, movement);
+      }
+    }
+    return map;
+  }, [activeMovements]);
+
+  const errorMessage = error ?? docksError;
+
+  const refreshAll = useCallback(async () => {
+    await Promise.all([refetch(), refetchDocks()]);
+  }, [refetch, refetchDocks]);
 
   return (
     <div className="dashboard">
       <div className="dashboard-header">
-        <h2><span aria-hidden="true">📊</span> Painel de Controle - Pátio</h2>
+        <h2><ClipboardList aria-hidden="true" /> Painel de Controle - Patio</h2>
         <div className="date-time">
-          <span aria-label="Data atual: 16 de Fevereiro de 2026"><span aria-hidden="true">📅</span> 16 de Fevereiro de 2026</span>
-          <span aria-label="Horário atual: 10:45"><span aria-hidden="true">🕒</span> 10:45</span>
+          <span><Calendar aria-hidden="true" /> {formatDate(new Date().toISOString())}</span>
         </div>
       </div>
 
       <div className="kpi-grid">
         <div className="kpi-card">
-          <div className="kpi-icon" aria-hidden="true">🚛</div>
+          <div className="kpi-icon" aria-hidden="true"><Truck /></div>
           <div className="kpi-content">
-            <h3>Veículos no Pátio</h3>
+            <h3>Veiculos no Patio</h3>
             <p className="kpi-value">{metrics.veiculosNoPatio}</p>
             <span>Aguardando doca</span>
           </div>
         </div>
 
         <div className="kpi-card">
-          <div className="kpi-icon" aria-hidden="true">⏳</div>
+          <div className="kpi-icon" aria-hidden="true"><Clock /></div>
           <div className="kpi-content">
             <h3>Na Fila de Espera</h3>
             <p className="kpi-value">{metrics.veiculosNaFila}</p>
-            <span>Para atendimento</span>
+            <span>Com entrada autorizada</span>
           </div>
         </div>
 
         <div className="kpi-card">
-          <div className="kpi-icon" aria-hidden="true">🏭</div>
+          <div className="kpi-icon" aria-hidden="true"><Warehouse /></div>
           <div className="kpi-content">
             <h3>Nas Docas</h3>
             <p className="kpi-value">{metrics.veiculosNaDoca}</p>
-            <span>Em operação</span>
+            <span>{docks.length} docas cadastradas</span>
           </div>
         </div>
 
         <div className="kpi-card">
-          <div className="kpi-icon" aria-hidden="true">🅿️</div>
+          <div className="kpi-icon" aria-hidden="true"><MapPin /></div>
           <div className="kpi-content">
-            <h3>Vagas Disponíveis</h3>
+            <h3>Vagas Disponiveis</h3>
             <p className="kpi-value">{metrics.vagasDisponiveis}</p>
             <span>De {metrics.totalVagas} totais</span>
           </div>
         </div>
 
         <div className="kpi-card">
-          <div className="kpi-icon" aria-hidden="true">⏱️</div>
+          <div className="kpi-icon" aria-hidden="true"><Clock /></div>
           <div className="kpi-content">
-            <h3>Tempo Médio</h3>
+            <h3>Tempo Medio</h3>
             <p className="kpi-value">{metrics.tempoMedioEspera}</p>
-            <span>Na fila/atendimento</span>
+            <span>Desde a chegada</span>
           </div>
         </div>
 
         <div className="kpi-card">
-          <div className="kpi-icon" aria-hidden="true">📦</div>
+          <div className="kpi-icon" aria-hidden="true"><ClipboardList /></div>
           <div className="kpi-content">
-            <h3>Movimentações</h3>
-            <p className="kpi-value">{metrics.movimentacoesHoje}</p>
-            <span>Nas últimas 24h</span>
+            <h3>Finalizados Hoje</h3>
+            <p className="kpi-value">{metrics.finalizadosHoje}</p>
+            <span>{metrics.movimentacoesHoje} criadas em 24h</span>
           </div>
         </div>
       </div>
 
+      {errorMessage && (
+        <div className="alertas-section" role="alert">
+          <h3><AlertTriangle aria-hidden="true" /> Falha ao carregar patio</h3>
+          <div className="alertas-list">
+            <div className="alerta warning">
+              <span>{errorMessage}</span>
+              <button className="btn btn--secondary" onClick={() => void refreshAll()}>
+                Tentar novamente
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="alertas-section">
-        <h3><span aria-hidden="true">⚠️</span> Alertas</h3>
+        <h3><AlertTriangle aria-hidden="true" /> Alertas</h3>
         <div className="alertas-list">
-          <div className="alerta warning">
-            <span><span aria-hidden="true">⏰</span> Veículo ABC-1234 aguardando há mais de 2 horas</span>
-          </div>
-          <div className="alerta info">
-            <span><span aria-hidden="true">📋</span> 3 autorizações pendentes de aprovação</span>
-          </div>
-          <div className="alerta success">
-            <span><span aria-hidden="true">✅</span> Doca 2 liberada para novo veículo</span>
-          </div>
+          {activeMovements.length === 0 ? (
+            <div className="alerta success">
+              <span><CheckCircle2 aria-hidden="true" /> Nenhuma movimentacao ativa no patio.</span>
+            </div>
+          ) : (
+            activeMovements
+              .filter((movement) => minutesSince(movement.arrivalDate) >= 120)
+              .slice(0, 3)
+              .map((movement) => (
+                <div className="alerta warning" key={movement.id}>
+                  <span>
+                    <Clock aria-hidden="true" /> {movement.plateSnapshot} aguardando ha {formatDuration(minutesSince(movement.arrivalDate))}
+                  </span>
+                </div>
+              ))
+          )}
         </div>
       </div>
 
       <div className="occupation-section">
-        <h3><span aria-hidden="true">📍</span> Ocupação do Pátio</h3>
+        <h3><MapPin aria-hidden="true" /> Ocupacao do Patio</h3>
         <div
           className="occupation-bar"
           role="progressbar"
           aria-valuenow={ocupacaoPatioInt}
           aria-valuemin={0}
           aria-valuemax={100}
-          aria-label="Ocupação do pátio"
+          aria-label="Ocupacao do patio"
         >
           <div
             className="occupation-fill"
-            style={{ width: `${ocupacaoPatio}%` }}
+            style={{ width: `${Math.min(100, ocupacaoPatio)}%` }}
           >
             {ocupacaoPatio.toFixed(1)}% ocupado
           </div>
         </div>
         <div className="occupation-legend">
-          <span><span className="dot dot--success" aria-hidden="true"></span> Pátio: {metrics.veiculosNoPatio}</span>
+          <span><span className="dot dot--success" aria-hidden="true"></span> Patio: {metrics.veiculosNoPatio}</span>
           <span><span className="dot dot--info" aria-hidden="true"></span> Docas: {metrics.veiculosNaDoca}</span>
           <span><span className="dot dot--warning" aria-hidden="true"></span> Fila: {metrics.veiculosNaFila}</span>
           <span><span className="dot dot--neutral" aria-hidden="true"></span> Vagas: {metrics.vagasDisponiveis}</span>
@@ -205,19 +285,19 @@ const Dashboard: React.FC = () => {
 
       <div className="veiculos-section">
         <div className="section-header">
-          <h3><span aria-hidden="true">🚚</span> Veículos no Pátio / Docas</h3>
+          <h3><Truck aria-hidden="true" /> Autorizacoes e Movimentacoes</h3>
           <div className="filters">
             <select
               value={filtroStatus}
               onChange={(e) => setFiltroStatus(e.target.value)}
               className="status-filter"
-              aria-label="Filtrar veículos por status"
+              aria-label="Filtrar veiculos por status"
             >
               <option value="todos">Todos os status</option>
-              <option value="pátio">No Pátio</option>
-              <option value="doca">Nas Docas</option>
-              <option value="fila">Na Fila</option>
-              <option value="finalizado">Finalizados</option>
+              <option value="WAITING_QUEUE">Na Fila</option>
+              <option value="YARD">No Patio</option>
+              <option value="DOCKED">Nas Docas</option>
+              <option value="FINISHED">Finalizados</option>
             </select>
           </div>
         </div>
@@ -230,61 +310,98 @@ const Dashboard: React.FC = () => {
                 <th>Status</th>
                 <th>Doca</th>
                 <th>Data Chegada</th>
-                <th>Data Saída</th>
+                <th>Data Saida</th>
                 <th>Liberado por</th>
                 <th>Tipo Processo</th>
                 <th>Peso Entrada</th>
-                <th>Peso Saída</th>
+                <th>Peso Saida</th>
               </tr>
             </thead>
             <tbody>
-              {veiculosFiltrados.map(veiculo => (
-                <tr key={veiculo.id} className={veiculo.status === 'Finalizado' ? 'finalizado' : ''}>
-                  <td><span className="placa">{veiculo.placa}</span></td>
-                  <td>
-                    <span className={`status-badge status-badge--${statusToVariant(veiculo.status)} status-${statusToSlug(veiculo.status)}`}>
-                      {veiculo.status}
-                    </span>
-                  </td>
-                  <td>{veiculo.doca}</td>
-                  <td>{veiculo.dataChegada}</td>
-                  <td>{veiculo.dataSaida}</td>
-                  <td>{veiculo.liberadoPor}</td>
-                  <td>{veiculo.tipoProcesso}</td>
-                  <td>{veiculo.pesoEntrada}</td>
-                  <td>{veiculo.pesoSaida}</td>
+              {loading ? (
+                <tr>
+                  <td colSpan={9}>Carregando movimentacoes...</td>
                 </tr>
-              ))}
+              ) : veiculosFiltrados.length === 0 ? (
+                <tr>
+                  <td colSpan={9}>Nenhuma autorizacao de entrada criada ainda.</td>
+                </tr>
+              ) : (
+                veiculosFiltrados.map((movement) => {
+                  const label = yardMovementStatusLabel(movement.status);
+                  return (
+                    <tr key={movement.id} className={movement.status === "FINISHED" ? "finalizado" : ""}>
+                      <td><span className="placa">{movement.plateSnapshot}</span></td>
+                      <td>
+                        <span className={`status-badge status-badge--${statusToVariant(label)} status-${statusToSlug(label)}`}>
+                          {label}
+                        </span>
+                      </td>
+                      <td>{movement.dock ?? "-"}</td>
+                      <td>{formatDate(movement.arrivalDate)}</td>
+                      <td>{formatDate(movement.departureDate)}</td>
+                      <td>
+                        {yardMovementActorLabel(
+                          movement.releasedByUser,
+                          movement.releasedBy
+                        )}
+                      </td>
+                      <td>{movement.processType ?? "-"}</td>
+                      <td>{formatWeight(movement.entryWeight)}</td>
+                      <td>{formatWeight(movement.exitWeight)}</td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>
       </div>
 
       <div className="docas-section">
-        <h3><span aria-hidden="true">🏭</span> Status das Docas</h3>
+        <h3><Warehouse aria-hidden="true" /> Status das Docas</h3>
         <div className="docas-grid">
-          <div className="doca-card ocupada">
-            <h4>Doca 1</h4>
-            <p><span aria-hidden="true">🚛</span> MNO-3456</p>
-            <span>Descarga - 75%</span>
-          </div>
-          <div className="doca-card disponivel">
-            <h4>Doca 2</h4>
-            <p><span aria-hidden="true">✅</span> Disponível</p>
-          </div>
-          <div className="doca-card ocupada">
-            <h4>Doca 3</h4>
-            <p><span aria-hidden="true">🚛</span> XYZ-5678</p>
-            <span>Descarga - 30%</span>
-          </div>
-          <div className="doca-card manutencao">
-            <h4>Doca 4</h4>
-            <p><span aria-hidden="true">🔧</span> Em manutenção</p>
-          </div>
-          <div className="doca-card disponivel">
-            <h4>Doca 5</h4>
-            <p><span aria-hidden="true">✅</span> Disponível</p>
-          </div>
+          {docksLoading ? (
+            <div className="doca-card neutra">
+              <h4>Carregando</h4>
+              <p><Clock aria-hidden="true" /> Consultando docas...</p>
+            </div>
+          ) : docks.length === 0 ? (
+            <div className="doca-card neutra">
+              <h4>Sem docas</h4>
+              <p><AlertTriangle aria-hidden="true" /> Cadastre docas para operar.</p>
+            </div>
+          ) : (
+            docks.map((dock) => {
+              const movement = dockMovements.get(dock.code);
+              const cardStatus = movement
+                ? "ocupada"
+                : dock.status === "ACTIVE"
+                  ? "disponivel"
+                  : dock.status === "MAINTENANCE"
+                    ? "manutencao"
+                    : "inativa";
+
+              return (
+                <div key={dock.id} className={`doca-card ${cardStatus}`}>
+                  <h4>{dock.code}</h4>
+                  {movement ? (
+                    <>
+                      <p><Truck aria-hidden="true" /> {movement.plateSnapshot}</p>
+                      <span>{movement.processType ?? "Operacao em andamento"}</span>
+                    </>
+                  ) : dock.status === "ACTIVE" ? (
+                    <p><CheckCircle2 aria-hidden="true" /> Disponivel</p>
+                  ) : (
+                    <>
+                      <p><AlertTriangle aria-hidden="true" /> {dockStatusLabel(dock.status)}</p>
+                      <span>{dock.maintenanceReason ?? "Fora de operacao"}</span>
+                    </>
+                  )}
+                </div>
+              );
+            })
+          )}
         </div>
       </div>
     </div>

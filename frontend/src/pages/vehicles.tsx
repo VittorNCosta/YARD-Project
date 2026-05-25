@@ -10,6 +10,7 @@ import {
   CheckCircle2,
   Ban,
   AlertTriangle,
+  ClipboardCheck,
   X,
 } from "lucide-react";
 import "./vehicles.css";
@@ -19,6 +20,8 @@ import {
   type Veiculo,
   type VeiculoFormData,
 } from "../hooks/useVehicles";
+import { useYardMovements } from "../hooks/useYardMovements";
+import { yardMovementStatusLabel } from "../services/yardMovements";
 
 const INITIAL_FORM: VeiculoFormData = {
   placa: "",
@@ -30,6 +33,14 @@ const INITIAL_FORM: VeiculoFormData = {
   status: "Ativo",
 };
 
+interface AuthorizationFormData {
+  motorista: string;
+  cpf: string;
+  cargoType: string;
+  processType: string;
+  pesagemObrigatoria: boolean;
+}
+
 const TIPOS_VEICULO: TipoVeiculo[] = [
   "Truck",
   "Van",
@@ -38,6 +49,9 @@ const TIPOS_VEICULO: TipoVeiculo[] = [
   "Bitrem",
   "VUC",
 ];
+
+const TIPOS_PROCESSO = ["Carga", "Descarga", "Carga/Descarga", "Aguardando"];
+const TIPOS_CARGA = ["Geral", "Alimentos", "Bebidas", "Quimicos", "Secos", "Refrigerados"];
 
 const getInitials = (name: string): string =>
   name
@@ -51,6 +65,12 @@ const getInitials = (name: string): string =>
 const Veiculos: React.FC = () => {
   const { vehicles, loading, error, refetch, create, toggleStatus, remove } =
     useVehicles();
+  const {
+    loading: movementsLoading,
+    error: movementError,
+    openByVehicleId,
+    createAuthorization,
+  } = useYardMovements();
 
   const [showModal, setShowModal] = useState<boolean>(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -61,7 +81,18 @@ const Veiculos: React.FC = () => {
   const [deleteTarget, setDeleteTarget] = useState<Veiculo | null>(null);
   const [deleting, setDeleting] = useState<boolean>(false);
 
-  const [rowLoading, setRowLoading] = useState<Record<string, "toggle" | "delete" | undefined>>({});
+  const [authorizationTarget, setAuthorizationTarget] = useState<Veiculo | null>(null);
+  const [authorizationForm, setAuthorizationForm] = useState<AuthorizationFormData>({
+    motorista: "",
+    cpf: "",
+    cargoType: "Geral",
+    processType: "Carga",
+    pesagemObrigatoria: false,
+  });
+  const [authorizing, setAuthorizing] = useState<boolean>(false);
+  const [authorizationError, setAuthorizationError] = useState<string | null>(null);
+
+  const [rowLoading, setRowLoading] = useState<Record<string, "toggle" | "delete" | "authorize" | undefined>>({});
 
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<string>("todos");
@@ -179,6 +210,38 @@ const Veiculos: React.FC = () => {
     []
   );
 
+  const handleAuthorizationChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+      const { name, value, type } = e.target;
+      if (type === "checkbox") {
+        const checked = (e.target as HTMLInputElement).checked;
+        setAuthorizationForm((prev) => ({ ...prev, [name]: checked }));
+      } else {
+        setAuthorizationForm((prev) => ({ ...prev, [name]: value }));
+      }
+    },
+    []
+  );
+
+  const openAuthorizationModal = useCallback((veiculo: Veiculo) => {
+    triggerRef.current = document.activeElement as HTMLElement | null;
+    setAuthorizationTarget(veiculo);
+    setAuthorizationError(null);
+    setAuthorizationForm({
+      motorista: veiculo.motorista,
+      cpf: veiculo.cpf,
+      cargoType: "Geral",
+      processType: "Carga",
+      pesagemObrigatoria: veiculo.pesagemObrigatoria,
+    });
+  }, []);
+
+  const closeAuthorizationModal = useCallback(() => {
+    setAuthorizationTarget(null);
+    setAuthorizationError(null);
+    setAuthorizing(false);
+  }, []);
+
   const handleSubmit = useCallback(
     async (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault();
@@ -200,6 +263,49 @@ const Veiculos: React.FC = () => {
       }
     },
     [editingId, formData, create, closeModal]
+  );
+
+  const handleAuthorizationSubmit = useCallback(
+    async (e: React.FormEvent<HTMLFormElement>) => {
+      e.preventDefault();
+      if (!authorizationTarget) return;
+
+      setAuthorizationError(null);
+      setAuthorizing(true);
+      setRowLoading((prev) => ({
+        ...prev,
+        [authorizationTarget.id]: "authorize",
+      }));
+
+      try {
+        await createAuthorization({
+          vehicleId: authorizationTarget.id,
+          driverName: authorizationForm.motorista,
+          driverCpf: authorizationForm.cpf || undefined,
+          cargoType: authorizationForm.cargoType,
+          processType: authorizationForm.processType,
+          weighingRequired: authorizationForm.pesagemObrigatoria,
+        });
+        closeAuthorizationModal();
+      } catch (err) {
+        setAuthorizationError(
+          err instanceof Error ? err.message : "Erro ao autorizar entrada."
+        );
+      } finally {
+        setAuthorizing(false);
+        setRowLoading((prev) => {
+          const next = { ...prev };
+          delete next[authorizationTarget.id];
+          return next;
+        });
+      }
+    },
+    [
+      authorizationTarget,
+      authorizationForm,
+      createAuthorization,
+      closeAuthorizationModal,
+    ]
   );
 
   const handleToggleStatus = useCallback(
@@ -246,10 +352,10 @@ const Veiculos: React.FC = () => {
   }, [deleteTarget, remove]);
 
   const renderTableBody = () => {
-    if (loading) {
+    if (loading || movementsLoading) {
       return (
         <tr>
-          <td colSpan={8} role="status" aria-live="polite">
+          <td colSpan={9} role="status" aria-live="polite">
             <div className="empty-state">
               <div className="empty-state-illus"><Truck /></div>
               <h4>Carregando veículos…</h4>
@@ -260,16 +366,16 @@ const Veiculos: React.FC = () => {
       );
     }
 
-    if (error && vehicles.length === 0) {
+    if ((error || movementError) && vehicles.length === 0) {
       return (
         <tr>
-          <td colSpan={8} role="alert">
+          <td colSpan={9} role="alert">
             <div className="empty-state">
               <div className="empty-state-illus" style={{ background: "var(--color-danger-50)", color: "var(--color-danger-600)" }}>
                 <AlertTriangle />
               </div>
               <h4>Não foi possível carregar os veículos</h4>
-              <p>{error}</p>
+              <p>{error ?? movementError}</p>
               <button type="button" className="btn btn--secondary" onClick={() => void refetch()}>
                 Tentar novamente
               </button>
@@ -283,7 +389,7 @@ const Veiculos: React.FC = () => {
       const isEmpty = vehicles.length === 0;
       return (
         <tr>
-          <td colSpan={8} role="status">
+          <td colSpan={9} role="status">
             <div className="empty-state">
               <div className="empty-state-illus"><Truck /></div>
               <h4>{isEmpty ? "Nenhum veículo cadastrado ainda" : "Nenhum veículo encontrado"}</h4>
@@ -310,6 +416,8 @@ const Veiculos: React.FC = () => {
     return filteredVeiculos.map((v) => {
       const inactive = v.status !== "Ativo";
       const rowBusy = rowLoading[v.id];
+      const openMovement = openByVehicleId.get(v.id);
+      const canAuthorize = !inactive && !openMovement && !movementsLoading;
       return (
         <tr key={v.id} className={inactive ? "row--inactive" : undefined}>
           <td><span className="placa">{v.placa}</span></td>
@@ -344,7 +452,27 @@ const Veiculos: React.FC = () => {
             )}
           </td>
           <td>
+            {openMovement ? (
+              <span className="status-badge status-badge--info">
+                <ClipboardCheck /> {yardMovementStatusLabel(openMovement.status)}
+              </span>
+            ) : (
+              <span className="status-badge status-badge--neutral">
+                Sem autorizacao
+              </span>
+            )}
+          </td>
+          <td>
             <div className="row-actions">
+              <button
+                className={`btn btn--icon ${rowBusy === "authorize" ? "is-loading" : ""}`}
+                title="Autorizar entrada"
+                aria-label={`Autorizar entrada do veiculo ${v.placa}`}
+                onClick={() => openAuthorizationModal(v)}
+                disabled={!!rowBusy || !canAuthorize}
+              >
+                <ClipboardCheck />
+              </button>
               <button
                 className="btn btn--icon"
                 title="Editar"
@@ -392,9 +520,9 @@ const Veiculos: React.FC = () => {
         </button>
       </div>
 
-      {error && vehicles.length > 0 && (
+      {(error || movementError) && vehicles.length > 0 && (
         <div className="status-badge status-badge--danger" role="alert" style={{ marginBottom: "1rem" }}>
-          {error}
+          {error ?? movementError}
         </div>
       )}
 
@@ -490,6 +618,7 @@ const Veiculos: React.FC = () => {
                 <th>Tipo</th>
                 <th>Pesagem</th>
                 <th>Status</th>
+                <th>Entrada</th>
                 <th>Ações</th>
               </tr>
             </thead>
@@ -582,6 +711,118 @@ const Veiculos: React.FC = () => {
                 </button>
                 <button type="submit" className="btn btn--primary" disabled={submitting}>
                   {submitting ? "Salvando..." : "Salvar"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {authorizationTarget && (
+        <div className="modal-overlay" onClick={closeAuthorizationModal}>
+          <div
+            className="modal-card"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="modal-authorization-title"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="modal-header">
+              <h3 id="modal-authorization-title">
+                Autorizacao de Entrada - {authorizationTarget.placa}
+              </h3>
+              <button
+                className="btn btn--icon modal-close"
+                onClick={closeAuthorizationModal}
+                aria-label="Fechar modal"
+                disabled={authorizing}
+              >
+                <X />
+              </button>
+            </div>
+
+            <form className="modal-form" onSubmit={handleAuthorizationSubmit}>
+              {authorizationError && (
+                <div className="status-badge status-badge--danger" role="alert" style={{ marginBottom: "1rem" }}>
+                  {authorizationError}
+                </div>
+              )}
+
+              <div className="form-grid">
+                <div className="form-field">
+                  <label htmlFor="authorization-motorista">Motorista</label>
+                  <input
+                    id="authorization-motorista"
+                    name="motorista"
+                    type="text"
+                    className="form-input"
+                    value={authorizationForm.motorista}
+                    onChange={handleAuthorizationChange}
+                    required
+                  />
+                </div>
+                <div className="form-field">
+                  <label htmlFor="authorization-cpf">CPF</label>
+                  <input
+                    id="authorization-cpf"
+                    name="cpf"
+                    type="text"
+                    className="form-input"
+                    value={authorizationForm.cpf}
+                    onChange={handleAuthorizationChange}
+                  />
+                </div>
+                <div className="form-field">
+                  <label htmlFor="authorization-cargo">Tipo de Carga</label>
+                  <select
+                    id="authorization-cargo"
+                    name="cargoType"
+                    className="form-input"
+                    value={authorizationForm.cargoType}
+                    onChange={handleAuthorizationChange}
+                  >
+                    {TIPOS_CARGA.map((tipo) => (
+                      <option key={tipo} value={tipo}>{tipo}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-field">
+                  <label htmlFor="authorization-process">Tipo de Processo</label>
+                  <select
+                    id="authorization-process"
+                    name="processType"
+                    className="form-input"
+                    value={authorizationForm.processType}
+                    onChange={handleAuthorizationChange}
+                  >
+                    {TIPOS_PROCESSO.map((tipo) => (
+                      <option key={tipo} value={tipo}>{tipo}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-field form-field-checkbox">
+                  <label htmlFor="authorization-pesagem">
+                    <input
+                      id="authorization-pesagem"
+                      name="pesagemObrigatoria"
+                      type="checkbox"
+                      checked={authorizationForm.pesagemObrigatoria}
+                      onChange={handleAuthorizationChange}
+                    />
+                    <span>
+                      Pesagem Obrigatoria
+                      <span className="helper">A movimentacao passara pelas etapas de pesagem.</span>
+                    </span>
+                  </label>
+                </div>
+              </div>
+
+              <div className="modal-actions">
+                <button type="button" className="btn btn--secondary" onClick={closeAuthorizationModal} disabled={authorizing}>
+                  Cancelar
+                </button>
+                <button type="submit" className="btn btn--primary" disabled={authorizing}>
+                  {authorizing ? "Autorizando..." : "Criar Autorizacao"}
                 </button>
               </div>
             </form>

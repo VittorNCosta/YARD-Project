@@ -45,7 +45,8 @@ const Header: React.FC = () => {
         <ul>
           <li><NavLink to="/" end>Dashboard</NavLink></li>
           <li><a href="#estoque">Estoque</a></li>
-          <li><a href="#movimentacoes">Movimentações</a></li>
+          <li><NavLink to="/autorizacoes">Autorizacoes</NavLink></li>
+          <li><NavLink to="/docas">Docas</NavLink></li>
           <li><a href="#relatorios">Relatórios</a></li>
           <li><NavLink to="/veiculos">Veículos</NavLink></li>
           {isAdmin && (

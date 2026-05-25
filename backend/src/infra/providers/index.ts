@@ -12,3 +12,5 @@
 import "@/modules/user/infra/user/providers/user.provider";
 import "@/modules/auth/infra/auth/providers/auth.provider";
 import "@/modules/vehicle/infra/vehicle/providers/vehicle.provider";
+import "@/modules/yard/infra/dock/providers/dock.provider";
+import "@/modules/yard/infra/yard-movement/providers/yard-movement.provider";
