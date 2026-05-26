@@ -5,6 +5,8 @@ import Dashboard from '../components/Dashboard';
 import Veiculos from '../pages/vehicles';
 import Login from '../pages/Login';
 import Register from '../pages/Register';
+import ForgotPassword from '../pages/ForgotPassword';
+import ResetPassword from '../pages/ResetPassword';
 import Users from '../pages/Users';
 import ProtectedRoute from '../components/ProtectedRoute';
 import RoleGuard from '../components/RoleGuard';
@@ -13,7 +15,12 @@ import { ToastProvider } from '../components/Toast';
 
 import './App.css';
 
-const AUTH_ROUTES = new Set<string>(['/login', '/register']);
+const AUTH_ROUTES = new Set<string>([
+  '/login',
+  '/register',
+  '/forgot-password',
+  '/reset-password',
+]);
 
 function AppShell() {
   const location = useLocation();
@@ -27,6 +34,8 @@ function AppShell() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
 
           <Route element={<ProtectedRoute />}>
             <Route path="/" element={<Dashboard />} />

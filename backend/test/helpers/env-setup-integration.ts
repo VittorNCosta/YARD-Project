@@ -16,3 +16,11 @@ process.env.JWT_REFRESH_TTL = "7d";
 process.env.COOKIE_SECRET = "z".repeat(32);
 process.env.FRONTEND_URL = "http://localhost:5173";
 process.env.MONGO_URI = "mongodb://placeholder/test";
+
+// ─── Password reset envs (test defaults) ─────────────────────────────
+process.env.RESET_TOKEN_PEPPER =
+    "test-pepper-test-pepper-test-pepper-test-pepper-test-pepper-1234";
+process.env.DUMMY_BCRYPT_HASH =
+    "$2b$12$abcdefghijklmnopqrstuOmIscS1F3pNcsCMjlxNxehiHfsCM9aQrG";
+process.env.PASSWORD_RESET_TTL_MINUTES = "30";
+process.env.SMTP_FROM = "test@yardcontrol.local";
