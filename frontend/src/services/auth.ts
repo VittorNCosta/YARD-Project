@@ -60,3 +60,26 @@ export async function refresh(): Promise<User> {
   const data = await apiRequest<UserEnvelope>("/auth/refresh", { method: "POST" });
   return data.user;
 }
+
+export interface ForgotPasswordInput {
+  email: string;
+}
+
+export async function forgotPassword(input: ForgotPasswordInput): Promise<void> {
+  await apiRequest<unknown>("/auth/forgot-password", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export interface ResetPasswordInput {
+  token: string;
+  password: string;
+}
+
+export async function resetPassword(input: ResetPasswordInput): Promise<void> {
+  await apiRequest<unknown>("/auth/reset-password", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}

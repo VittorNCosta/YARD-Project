@@ -118,6 +118,9 @@ const Login: React.FC = () => {
                 {errors.password.message}
               </span>
             )}
+            <Link to="/forgot-password" className="auth-form__forgot-link">
+              Esqueci minha senha
+            </Link>
           </div>
 
           <button type="submit" className="btn btn--primary auth-submit" disabled={isSubmitting}>
