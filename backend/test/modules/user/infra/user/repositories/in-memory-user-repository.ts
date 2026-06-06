@@ -4,6 +4,7 @@ import {
     type CountUserOptions,
     type ListUserOptions,
     UserRepository,
+    type UserRoleCount,
 } from "@/modules/user/domain/user/repositories/user-repository";
 
 export class InMemoryUserRepository extends UserRepository {
@@ -52,6 +53,19 @@ export class InMemoryUserRepository extends UserRepository {
         _databaseOptions?: DatabaseOptions
     ): Promise<number> {
         return this.applyFilter(options.q).length;
+    }
+
+    async countByRole(
+        _databaseOptions?: DatabaseOptions
+    ): Promise<UserRoleCount[]> {
+        const buckets = new Map<User["role"], number>();
+        for (const u of this.items) {
+            buckets.set(u.role, (buckets.get(u.role) ?? 0) + 1);
+        }
+        return Array.from(buckets.entries()).map(([role, count]) => ({
+            role,
+            count,
+        }));
     }
 
     async update(user: User, _options?: DatabaseOptions): Promise<User> {

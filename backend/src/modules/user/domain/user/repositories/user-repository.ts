@@ -1,5 +1,6 @@
 import type { DatabaseOptions } from "@/core/types/database-options";
 
+import type { UserRole } from "../enums/user-role";
 import type { User } from "../entities/user";
 
 export interface ListUserOptions {
@@ -10,6 +11,15 @@ export interface ListUserOptions {
 
 export interface CountUserOptions {
     q?: string;
+}
+
+/**
+ * Bucket retornado por `countByRole`. Mantém a chave como `UserRole`
+ * para que o use-case consumidor não precise reconverter strings.
+ */
+export interface UserRoleCount {
+    role: UserRole;
+    count: number;
 }
 
 /**
@@ -44,6 +54,14 @@ export abstract class UserRepository {
         options: CountUserOptions,
         databaseOptions?: DatabaseOptions
     ): Promise<number>;
+
+    /**
+     * Conta usuários agrupados por papel. Usado pelo módulo `reports`
+     * para o dashboard "Usuários por papel" — read-only.
+     */
+    abstract countByRole(
+        databaseOptions?: DatabaseOptions
+    ): Promise<UserRoleCount[]>;
 
     abstract update(
         user: User,

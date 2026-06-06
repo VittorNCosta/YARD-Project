@@ -2,10 +2,12 @@ import HttpStatusCode from "@/core/enums/http-status-code";
 import { UseCaseError } from "@/core/errors/use-case-error";
 import type { DatabaseOptions } from "@/core/types/database-options";
 import type { User } from "@/modules/user/domain/user/entities/user";
+import { UserRole } from "@/modules/user/domain/user/enums/user-role";
 import {
     type CountUserOptions,
     type ListUserOptions,
     UserRepository,
+    type UserRoleCount,
 } from "@/modules/user/domain/user/repositories/user-repository";
 import { type FilterQuery, Types } from "mongoose";
 import { injectable } from "tsyringe";
@@ -83,6 +85,23 @@ export class MongoUserRepository extends UserRepository {
     ): Promise<number> {
         const filter = this.buildSearchFilter(options.q);
         return UserModel.countDocuments(filter).exec();
+    }
+
+    async countByRole(
+        _databaseOptions?: DatabaseOptions
+    ): Promise<UserRoleCount[]> {
+        interface Bucket {
+            _id: string | null;
+            count: number;
+        }
+        const buckets = await UserModel.aggregate<Bucket>([
+            { $group: { _id: "$role", count: { $sum: 1 } } },
+        ]).exec();
+
+        return buckets.map((b) => ({
+            role: (b._id as UserRole | null) ?? UserRole.USER,
+            count: b.count,
+        }));
     }
 
     async update(

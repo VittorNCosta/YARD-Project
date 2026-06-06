@@ -255,3 +255,68 @@ export function deleteVehicle(id: string): Promise<void> {
     method: "DELETE",
   });
 }
+
+/* ------------------------------------------------------------------ */
+/* Endpoints /api/reports                                              */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Bucket genérico (chave + contagem + percentual) usado pelos gráficos
+ * de composição. Espelha o DTO `FleetReportBucket` do backend.
+ */
+export interface FleetReportBucket {
+  key: string;
+  count: number;
+  percentage: number;
+}
+
+export interface FleetReportMonthlyBucket {
+  /** Formato `YYYY-MM`. */
+  month: string;
+  count: number;
+}
+
+export interface FleetReportRoleBucket {
+  role: string;
+  count: number;
+}
+
+export interface FleetReport {
+  generatedAt: string;
+  period: {
+    from: string | null;
+    to: string | null;
+  };
+  kpis: {
+    totalVehicles: number;
+    activePercentage: number;
+    weighingRequiredPercentage: number;
+    distinctVehicleTypes: number;
+  };
+  composition: {
+    byVehicleType: FleetReportBucket[];
+    byActiveStatus: FleetReportBucket[];
+    byWeighingRequired: FleetReportBucket[];
+  };
+  registrationsByMonth: FleetReportMonthlyBucket[];
+  /** Presente apenas quando o caller é admin. */
+  usersByRole?: FleetReportRoleBucket[];
+}
+
+export interface FleetReportFilters {
+  from?: string;
+  to?: string;
+}
+
+/** GET /reports/fleet — métricas agregadas de frota. */
+export function getFleetReport(
+  filters: FleetReportFilters = {}
+): Promise<FleetReport> {
+  const params = new URLSearchParams();
+  if (filters.from) params.set("from", filters.from);
+  if (filters.to) params.set("to", filters.to);
+  const qs = params.toString();
+  return request<FleetReport>(
+    qs.length > 0 ? `/reports/fleet?${qs}` : "/reports/fleet"
+  );
+}

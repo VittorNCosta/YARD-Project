@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import Header from '../components/Header';
 import Dashboard from '../components/Dashboard';
 import Veiculos from '../pages/vehicles';
+import Relatorios from '../pages/Relatorios';
 import Login from '../pages/Login';
 import Register from '../pages/Register';
 import ForgotPassword from '../pages/ForgotPassword';
@@ -40,6 +41,7 @@ function AppShell() {
           <Route element={<ProtectedRoute />}>
             <Route path="/" element={<Dashboard />} />
             <Route path="/veiculos" element={<Veiculos />} />
+            <Route path="/relatorios" element={<Relatorios />} />
 
             <Route element={<RoleGuard role="admin" />}>
               <Route path="/usuarios" element={<Users />} />

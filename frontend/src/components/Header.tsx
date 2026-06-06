@@ -46,7 +46,7 @@ const Header: React.FC = () => {
           <li><NavLink to="/" end>Dashboard</NavLink></li>
           <li><a href="#estoque">Estoque</a></li>
           <li><a href="#movimentacoes">Movimentações</a></li>
-          <li><a href="#relatorios">Relatórios</a></li>
+          <li><NavLink to="/relatorios">Relatórios</NavLink></li>
           <li><NavLink to="/veiculos">Veículos</NavLink></li>
           {isAdmin && (
             <li><NavLink to="/usuarios">Usuários</NavLink></li>

@@ -1,4 +1,5 @@
 import { authEn } from "@/modules/auth/domain/auth/languages/en";
+import { reportsEn } from "@/modules/reports/domain/reports/languages/en";
 import { userEn } from "@/modules/user/domain/user/languages/en";
 import { vehicleEn } from "@/modules/vehicle/domain/vehicle/languages/en";
 
@@ -10,6 +11,7 @@ export const en = {
     ...vehicleEn,
     ...userEn,
     ...authEn,
+    ...reportsEn,
 
     "validation.failed": "Request validation failed.",
     "http.internal-error": "Internal server error.",

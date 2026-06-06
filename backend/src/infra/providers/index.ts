@@ -12,3 +12,4 @@
 import "@/modules/user/infra/user/providers/user.provider";
 import "@/modules/auth/infra/auth/providers/auth.provider";
 import "@/modules/vehicle/infra/vehicle/providers/vehicle.provider";
+import "@/modules/reports/infra/reports/providers/reports.provider";

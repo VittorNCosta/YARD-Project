@@ -34,7 +34,11 @@
       "PowerShell(winget --version)",
       "PowerShell($exe = Get-ChildItem -Path \"$env:LOCALAPPDATA\\\\Microsoft\\\\WinGet\\\\Packages\" -Filter \"mailpit.exe\" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1; if \\($exe\\) { $exe.FullName } else { \"NAO_ENCONTRADO\" })",
       "PowerShell(& \"C:\\\\Users\\\\vitto\\\\AppData\\\\Local\\\\Microsoft\\\\WinGet\\\\Packages\\\\axllent.mailpit_Microsoft.Winget.Source_8wekyb3d8bbwe\\\\mailpit.exe\")",
-      "PowerShell(Start-Sleep -Seconds 2; \\(Test-NetConnection -ComputerName localhost -Port 1025 -InformationLevel Quiet\\); \\(Test-NetConnection -ComputerName localhost -Port 8025 -InformationLevel Quiet\\))"
+      "PowerShell(Start-Sleep -Seconds 2; \\(Test-NetConnection -ComputerName localhost -Port 1025 -InformationLevel Quiet\\); \\(Test-NetConnection -ComputerName localhost -Port 8025 -InformationLevel Quiet\\))",
+      "Bash(node -e \"const {z}=require\\('zod'\\); console.log\\(typeof z.iso, typeof \\(z.iso&&z.iso.datetime\\)\\); console.log\\(typeof z.string\\(\\).datetime\\);\")",
+      "Bash(node -e \"const {z}=require\\('zod'\\); const s=z.object\\({from: z.iso.datetime\\(\\).optional\\(\\), to: z.iso.datetime\\(\\).optional\\(\\)}\\).strict\\(\\); console.log\\(JSON.stringify\\(s.safeParse\\({from:'2024-01-01T00:00:00.000Z'}\\)\\)\\); console.log\\(JSON.stringify\\(s.safeParse\\({from:'not-iso'}\\)\\)\\); console.log\\(JSON.stringify\\(s.safeParse\\({}\\)\\)\\); console.log\\(JSON.stringify\\(s.safeParse\\({from:'2024-01-01T00:00:00Z', extra:1}\\)\\)\\);\")",
+      "Bash(xargs grep -l \"request.user\")",
+      "Bash(npm view *)"
     ]
   }
 }
