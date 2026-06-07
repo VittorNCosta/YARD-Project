@@ -51,6 +51,7 @@ export interface YardMovement {
   weighingRequired: boolean;
   entryWeight?: number;
   exitWeight?: number;
+  weightDifference?: number;
   dock?: string;
   arrivalDate: string;
   departureDate?: string;
@@ -72,7 +73,6 @@ export interface CreateYardMovementInput {
   driverCpf?: string;
   cargoType: string;
   processType?: string;
-  weighingRequired?: boolean;
   arrivalDate?: string;
 }
 

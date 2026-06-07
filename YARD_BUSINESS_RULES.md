@@ -62,6 +62,7 @@ Campos principais:
 - `weighingRequired`
 - `entryWeight`
 - `exitWeight`
+- `weightDifference` (calculado: `exitWeight - entryWeight`)
 - `dock`
 - `arrivalDate`
 - `departureDate`
@@ -158,6 +159,8 @@ Status finais:
 - Status inicial padrao: `WAITING_QUEUE`.
 - `arrivalDate` deve ser preenchida na criacao.
 - `createdBy` deve receber o usuario logado.
+- `weighingRequired` deve vir exclusivamente do cadastro do veiculo.
+- A autorizacao nao pode ligar/desligar pesagem manualmente.
 - Um evento `CREATED` deve ser registrado em `events`.
 - `departureDate`, `entryWeight`, `exitWeight`, `dock` e `releasedBy` iniciam vazios.
 
@@ -202,6 +205,9 @@ Status finais:
 - `exitWeight` deve ser maior que zero.
 - Exige `releasedBy`.
 - `releasedBy` deve ser preenchido automaticamente com o usuario logado.
+- A diferenca de peso deve ser calculada como `exitWeight - entryWeight`.
+- Valor positivo indica saida mais pesada que entrada; valor negativo indica
+  saida mais leve que entrada.
 
 ### `RELEASED` para `FINISHED`
 

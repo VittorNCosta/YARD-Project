@@ -17,7 +17,7 @@ import {
   CalendarDays,
 } from "lucide-react";
 import { useUsers } from "../hooks/useUsers";
-import { useToast } from "../components/Toast";
+import { useToast } from "../components/toast-context";
 import { ApiError } from "../services/api";
 import type { User, UserRole } from "../services/auth";
 import "./Users.css";

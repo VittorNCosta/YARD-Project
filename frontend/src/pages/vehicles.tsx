@@ -38,7 +38,6 @@ interface AuthorizationFormData {
   cpf: string;
   cargoType: string;
   processType: string;
-  pesagemObrigatoria: boolean;
 }
 
 const TIPOS_VEICULO: TipoVeiculo[] = [
@@ -87,7 +86,6 @@ const Veiculos: React.FC = () => {
     cpf: "",
     cargoType: "Geral",
     processType: "Carga",
-    pesagemObrigatoria: false,
   });
   const [authorizing, setAuthorizing] = useState<boolean>(false);
   const [authorizationError, setAuthorizationError] = useState<string | null>(null);
@@ -212,13 +210,8 @@ const Veiculos: React.FC = () => {
 
   const handleAuthorizationChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-      const { name, value, type } = e.target;
-      if (type === "checkbox") {
-        const checked = (e.target as HTMLInputElement).checked;
-        setAuthorizationForm((prev) => ({ ...prev, [name]: checked }));
-      } else {
-        setAuthorizationForm((prev) => ({ ...prev, [name]: value }));
-      }
+      const { name, value } = e.target;
+      setAuthorizationForm((prev) => ({ ...prev, [name]: value }));
     },
     []
   );
@@ -232,7 +225,6 @@ const Veiculos: React.FC = () => {
       cpf: veiculo.cpf,
       cargoType: "Geral",
       processType: "Carga",
-      pesagemObrigatoria: veiculo.pesagemObrigatoria,
     });
   }, []);
 
@@ -284,7 +276,6 @@ const Veiculos: React.FC = () => {
           driverCpf: authorizationForm.cpf || undefined,
           cargoType: authorizationForm.cargoType,
           processType: authorizationForm.processType,
-          weighingRequired: authorizationForm.pesagemObrigatoria,
         });
         closeAuthorizationModal();
       } catch (err) {
@@ -800,20 +791,19 @@ const Veiculos: React.FC = () => {
                     ))}
                   </select>
                 </div>
-                <div className="form-field form-field-checkbox">
-                  <label htmlFor="authorization-pesagem">
-                    <input
-                      id="authorization-pesagem"
-                      name="pesagemObrigatoria"
-                      type="checkbox"
-                      checked={authorizationForm.pesagemObrigatoria}
-                      onChange={handleAuthorizationChange}
-                    />
-                    <span>
-                      Pesagem Obrigatoria
-                      <span className="helper">A movimentacao passara pelas etapas de pesagem.</span>
-                    </span>
-                  </label>
+                <div className="form-field form-field-full">
+                  <label>Pesagem</label>
+                  <div className="authorization-weighing-readonly">
+                    {authorizationTarget?.pesagemObrigatoria ? (
+                      <span className="status-badge status-badge--warning">
+                        <Scale /> Obrigatoria no cadastro
+                      </span>
+                    ) : (
+                      <span className="status-badge status-badge--neutral">
+                        Nao obrigatoria no cadastro
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
 

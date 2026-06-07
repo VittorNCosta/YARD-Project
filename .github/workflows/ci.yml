@@ -34,6 +34,9 @@ jobs:
       - name: Unit tests
         run: npm run test:unit
 
+      - name: E2E tests
+        run: npm run test:e2e
+
   frontend:
     name: Frontend
     runs-on: ubuntu-latest
@@ -54,6 +57,8 @@ jobs:
       - name: Install
         run: npm ci
 
+      - name: Lint
+        run: npm run lint
+
       - name: Build
         run: npm run build
-

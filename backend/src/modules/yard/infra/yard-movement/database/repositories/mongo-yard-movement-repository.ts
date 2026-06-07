@@ -21,6 +21,26 @@ function isDuplicateKeyError(error: unknown): boolean {
     return "code" in error && (error as { code?: unknown }).code === 11000;
 }
 
+function buildUpdatePayload(
+    data: Partial<Record<keyof YardMovement, unknown>>
+): Record<string, unknown> {
+    const $set: Record<string, unknown> = {};
+    const $unset: Record<string, ""> = {};
+
+    for (const [key, value] of Object.entries(data)) {
+        if (value === undefined) {
+            $unset[key] = "";
+        } else {
+            $set[key] = value;
+        }
+    }
+
+    return {
+        ...(Object.keys($set).length > 0 ? { $set } : {}),
+        ...(Object.keys($unset).length > 0 ? { $unset } : {}),
+    };
+}
+
 @injectable()
 export class MongoYardMovementRepository extends YardMovementRepository {
     async create(
@@ -98,9 +118,11 @@ export class MongoYardMovementRepository extends YardMovementRepository {
         }
 
         try {
+            const persistence =
+                MongoYardMovementMapper.toPersistency(yardMovement);
             const doc = await YardMovementModel.findByIdAndUpdate(
                 yardMovement.id,
-                MongoYardMovementMapper.toPersistency(yardMovement),
+                buildUpdatePayload(persistence),
                 { new: true }
             ).exec();
 

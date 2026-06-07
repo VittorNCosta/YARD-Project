@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import { Navigate, Outlet } from "react-router-dom";
-import { useAuth } from "../contexts/AuthContext";
-import { useToast } from "./Toast";
+import { useAuth } from "../contexts/auth-context";
+import { useToast } from "./toast-context";
 import type { UserRole } from "../services/auth";
 
 interface RoleGuardProps {

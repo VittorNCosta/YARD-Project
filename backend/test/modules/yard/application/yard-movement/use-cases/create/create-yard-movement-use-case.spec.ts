@@ -63,6 +63,24 @@ describe("Create yard movement use case", () => {
         ).rejects.toBeInstanceOf(UseCaseError);
     });
 
+    it("should use only the vehicle weighing setting", async () => {
+        const vehicle = await vehicleRepository.create(
+            makeVehicle({
+                weighingRequired: false,
+            })
+        );
+
+        const result = await sut.execute({
+            vehicleId: vehicle.id!,
+            driverName: "Joao Motorista",
+            cargoType: "Geral",
+            createdBy: "user-1",
+            weighingRequired: true,
+        } as Parameters<typeof sut.execute>[0]);
+
+        expect(result.weighingRequired).toBe(false);
+    });
+
     it("should not be able to create two open movements for the same plate", async () => {
         const vehicle = await vehicleRepository.create(
             makeVehicle({ plate: "DEF-5678" })

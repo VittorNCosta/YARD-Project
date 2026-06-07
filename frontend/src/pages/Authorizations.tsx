@@ -22,7 +22,7 @@ import {
   type YardMovement,
   type YardMovementStatus,
 } from "../services/yardMovements";
-import { useToast } from "../components/Toast";
+import { useToast } from "../components/toast-context";
 import { statusToSlug, statusToVariant } from "../utils/status";
 import "./Authorizations.css";
 
@@ -32,7 +32,6 @@ interface AuthorizationFormData {
   cpf: string;
   cargoType: string;
   processType: string;
-  pesagemObrigatoria: boolean;
 }
 
 interface MovementActionFormData {
@@ -57,7 +56,6 @@ const INITIAL_FORM: AuthorizationFormData = {
   cpf: "",
   cargoType: "Geral",
   processType: "Carga",
-  pesagemObrigatoria: false,
 };
 
 const INITIAL_ACTION_FORM: MovementActionFormData = {
@@ -91,6 +89,12 @@ function formatDate(value?: string): string {
 function formatWeight(value?: number): string {
   if (value === undefined) return "-";
   return `${new Intl.NumberFormat("pt-BR").format(value)} kg`;
+}
+
+function formatWeightDifference(value?: number): string {
+  if (value === undefined) return "-";
+  const prefix = value > 0 ? "+" : "";
+  return `${prefix}${new Intl.NumberFormat("pt-BR").format(value)} kg`;
 }
 
 function parseDateInput(value: string, endOfDay = false): number | null {
@@ -435,7 +439,6 @@ const Authorizations: React.FC = () => {
         cpf: vehicle?.cpf ?? "",
         cargoType: "Geral",
         processType: "Carga",
-        pesagemObrigatoria: vehicle?.pesagemObrigatoria ?? false,
       });
     },
     [vehicles]
@@ -443,17 +446,12 @@ const Authorizations: React.FC = () => {
 
   const handleInputChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-      const { name, value, type } = e.target;
+      const { name, value } = e.target;
       if (name === "vehicleId") {
         handleVehicleSelection(value);
         return;
       }
-      if (type === "checkbox") {
-        const checked = (e.target as HTMLInputElement).checked;
-        setFormData((prev) => ({ ...prev, [name]: checked }));
-      } else {
-        setFormData((prev) => ({ ...prev, [name]: value }));
-      }
+      setFormData((prev) => ({ ...prev, [name]: value }));
     },
     [handleVehicleSelection]
   );
@@ -476,7 +474,6 @@ const Authorizations: React.FC = () => {
           driverCpf: formData.cpf || undefined,
           cargoType: formData.cargoType,
           processType: formData.processType,
-          weighingRequired: formData.pesagemObrigatoria,
         });
         setShowModal(false);
         resetForm();
@@ -753,13 +750,14 @@ const Authorizations: React.FC = () => {
                 <th>Doca</th>
                 <th>Peso Entrada</th>
                 <th>Peso Saida</th>
+                <th>Diferenca</th>
                 <th>Acoes</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={12}>
+                  <td colSpan={13}>
                     <div className="empty-state">
                       <div className="empty-state-illus"><Truck /></div>
                       <h4>Carregando autorizacoes...</h4>
@@ -769,7 +767,7 @@ const Authorizations: React.FC = () => {
                 </tr>
               ) : filteredMovements.length === 0 ? (
                 <tr>
-                  <td colSpan={12}>
+                  <td colSpan={13}>
                     <div className="empty-state">
                       <div className="empty-state-illus"><ClipboardCheck /></div>
                       <h4>Nenhuma autorizacao encontrada</h4>
@@ -827,6 +825,7 @@ const Authorizations: React.FC = () => {
                       <td>{movement.dock ?? "-"}</td>
                       <td>{formatWeight(movement.entryWeight)}</td>
                       <td>{formatWeight(movement.exitWeight)}</td>
+                      <td>{formatWeightDifference(movement.weightDifference)}</td>
                       <td>
                         <div className="movement-actions">
                           <Link
@@ -985,20 +984,25 @@ const Authorizations: React.FC = () => {
                   </select>
                 </div>
 
-                <div className="form-field form-field-checkbox">
-                  <label htmlFor="authorization-weighing">
-                    <input
-                      id="authorization-weighing"
-                      name="pesagemObrigatoria"
-                      type="checkbox"
-                      checked={formData.pesagemObrigatoria}
-                      onChange={handleInputChange}
-                    />
-                    <span>
-                      Pesagem Obrigatoria
-                      <span className="helper">A movimentacao passara pelas etapas de pesagem.</span>
-                    </span>
-                  </label>
+                <div className="form-field form-field-full">
+                  <label>Pesagem</label>
+                  <div className="authorization-weighing-readonly">
+                    {selectedVehicle ? (
+                      selectedVehicle.pesagemObrigatoria ? (
+                        <span className="status-badge status-badge--warning">
+                          <Scale /> Obrigatoria no cadastro
+                        </span>
+                      ) : (
+                        <span className="status-badge status-badge--neutral">
+                          Nao obrigatoria no cadastro
+                        </span>
+                      )
+                    ) : (
+                      <span className="helper">
+                        Selecione um veiculo para consultar a regra de pesagem.
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
 

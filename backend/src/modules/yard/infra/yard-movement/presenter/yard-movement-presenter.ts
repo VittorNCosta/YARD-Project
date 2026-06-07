@@ -41,6 +41,7 @@ export class YardMovementPresenter {
             weighingRequired: yardMovement.weighingRequired,
             entryWeight: yardMovement.entryWeight,
             exitWeight: yardMovement.exitWeight,
+            weightDifference: yardMovement.weightDifference,
             dock: yardMovement.dock,
             arrivalDate: yardMovement.arrivalDate,
             departureDate: yardMovement.departureDate,

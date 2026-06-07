@@ -427,6 +427,16 @@
   color: var(--color-neutral-700);
 }
 
+.form-field-full {
+  grid-column: 1 / -1;
+}
+
+.authorization-weighing-readonly {
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+}
+
 .form-field-checkbox {
   grid-column: 1 / -1;
   background: color-mix(in srgb, var(--color-warning-50) 80%, white);

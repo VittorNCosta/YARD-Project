@@ -1,22 +1,18 @@
 import React, {
-  createContext,
   useCallback,
-  useContext,
   useMemo,
   useRef,
   useState,
 } from "react";
 import { CheckCircle2, AlertTriangle, Info, X } from "lucide-react";
+import {
+  ToastContext,
+  type ToastApi,
+  type ToastInput,
+  type ToastInputArg,
+  type ToastVariant,
+} from "./toast-context";
 import "./Toast.css";
-
-type ToastVariant = "success" | "error" | "info";
-
-export interface ToastInput {
-  title: string;
-  description?: string;
-}
-
-type ToastInputArg = string | ToastInput;
 
 interface ToastItem {
   id: number;
@@ -24,14 +20,6 @@ interface ToastItem {
   title: string;
   description?: string;
 }
-
-interface ToastApi {
-  success: (input: ToastInputArg) => void;
-  error: (input: ToastInputArg) => void;
-  info: (input: ToastInputArg) => void;
-}
-
-const ToastContext = createContext<ToastApi | null>(null);
 
 const AUTO_DISMISS_MS = 4000;
 
@@ -101,12 +89,4 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     </ToastContext.Provider>
   );
 };
-
-export function useToast(): ToastApi {
-  const ctx = useContext(ToastContext);
-  if (!ctx) {
-    throw new Error("useToast deve ser usado dentro de <ToastProvider>.");
-  }
-  return ctx;
-}
 
