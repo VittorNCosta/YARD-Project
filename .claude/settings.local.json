@@ -28,7 +28,13 @@
       "Bash(grep -v \"^$\")",
       "Bash(bun upgrade *)",
       "Bash(xargs grep -l \"buildApp\\\\|FastifyInstance\")",
-      "Bash(bun test:run)"
+      "Bash(bun test:run)",
+      "Bash(bun add *)",
+      "Bash(node -e \"console.log\\('RESET_TOKEN_PEPPER=' + require\\('crypto'\\).randomBytes\\(32\\).toString\\('hex'\\)\\); console.log\\('DUMMY_BCRYPT_HASH=' + require\\('bcrypt'\\).hashSync\\('dummy-string-for-timing-equalization', 12\\)\\)\")",
+      "PowerShell(winget --version)",
+      "PowerShell($exe = Get-ChildItem -Path \"$env:LOCALAPPDATA\\\\Microsoft\\\\WinGet\\\\Packages\" -Filter \"mailpit.exe\" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1; if \\($exe\\) { $exe.FullName } else { \"NAO_ENCONTRADO\" })",
+      "PowerShell(& \"C:\\\\Users\\\\vitto\\\\AppData\\\\Local\\\\Microsoft\\\\WinGet\\\\Packages\\\\axllent.mailpit_Microsoft.Winget.Source_8wekyb3d8bbwe\\\\mailpit.exe\")",
+      "PowerShell(Start-Sleep -Seconds 2; \\(Test-NetConnection -ComputerName localhost -Port 1025 -InformationLevel Quiet\\); \\(Test-NetConnection -ComputerName localhost -Port 8025 -InformationLevel Quiet\\))"
     ]
   }
 }

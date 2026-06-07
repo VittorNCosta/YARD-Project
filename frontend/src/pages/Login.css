@@ -128,3 +128,20 @@
   outline-offset: 2px;
   border-radius: var(--radius-xs);
 }
+
+.auth-form__forgot-link {
+  align-self: flex-end;
+  margin-top: var(--space-1);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--color-primary-700);
+  text-decoration: none;
+}
+.auth-form__forgot-link:hover {
+  text-decoration: underline;
+}
+.auth-form__forgot-link:focus-visible {
+  outline: 2px solid var(--color-primary-500);
+  outline-offset: 2px;
+  border-radius: var(--radius-xs);
+}
