@@ -1,9 +1,40 @@
 import { YardMovement } from "@/modules/yard/domain/yard-movement/entities/yard-movement";
 import { YardMovementStatus } from "@/modules/yard/domain/yard-movement/enums/yard-movement-status";
+import type {
+    YardMovementEvent,
+    YardMovementEventData,
+} from "@/modules/yard/domain/yard-movement/entities/yard-movement";
 
 import type { YardMovementDocument } from "../schemas/yard-movement.schema";
 
 export class MongoYardMovementMapper {
+    private static toDomainEvents(
+        events: YardMovementDocument["events"]
+    ): YardMovementEvent[] {
+        return events.map((event) => ({
+            type: event.type,
+            fromStatus: event.fromStatus,
+            toStatus: event.toStatus,
+            statusReason: event.statusReason,
+            createdBy: event.createdBy,
+            createdAt: event.createdAt,
+            data: this.toDomainEventData(event.data),
+        }));
+    }
+
+    private static toDomainEventData(
+        data: YardMovementEventData | undefined
+    ): YardMovementEventData | undefined {
+        if (!data) return undefined;
+
+        return {
+            entryWeight: data.entryWeight,
+            exitWeight: data.exitWeight,
+            dock: data.dock,
+            departureDate: data.departureDate,
+        };
+    }
+
     static toDomain(raw: YardMovementDocument): YardMovement {
         return YardMovement.create({
             id: raw._id?.toString(),
@@ -24,7 +55,7 @@ export class MongoYardMovementMapper {
             releasedBy: raw.releasedBy,
             cancelledBy: raw.cancelledBy,
             statusReason: raw.statusReason,
-            events: raw.events,
+            events: this.toDomainEvents(raw.events),
             createdAt: raw.createdAt,
             updatedAt: raw.updatedAt,
         });

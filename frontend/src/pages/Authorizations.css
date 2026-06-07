@@ -82,7 +82,7 @@
 }
 
 .authorizations-table {
-  min-width: 1540px;
+  min-width: 1630px;
 }
 
 .authorizations-page .filters {
@@ -108,6 +108,12 @@
 
 .authorizations-alert {
   margin-bottom: var(--space-4);
+}
+
+.authorization-weighing-readonly {
+  min-height: 38px;
+  display: flex;
+  align-items: center;
 }
 
 .form-field-full {

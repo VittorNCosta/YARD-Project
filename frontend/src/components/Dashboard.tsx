@@ -39,6 +39,12 @@ function formatWeight(value?: number): string {
   return `${new Intl.NumberFormat("pt-BR").format(value)} kg`;
 }
 
+function formatWeightDifference(value?: number): string {
+  if (value === undefined) return "-";
+  const prefix = value > 0 ? "+" : "";
+  return `${prefix}${new Intl.NumberFormat("pt-BR").format(value)} kg`;
+}
+
 function formatDuration(minutes: number): string {
   if (minutes < 60) return `${minutes}min`;
   const hours = Math.floor(minutes / 60);
@@ -315,16 +321,17 @@ const Dashboard: React.FC = () => {
                 <th>Tipo Processo</th>
                 <th>Peso Entrada</th>
                 <th>Peso Saida</th>
+                <th>Diferenca</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={9}>Carregando movimentacoes...</td>
+                  <td colSpan={10}>Carregando movimentacoes...</td>
                 </tr>
               ) : veiculosFiltrados.length === 0 ? (
                 <tr>
-                  <td colSpan={9}>Nenhuma autorizacao de entrada criada ainda.</td>
+                  <td colSpan={10}>Nenhuma autorizacao de entrada criada ainda.</td>
                 </tr>
               ) : (
                 veiculosFiltrados.map((movement) => {
@@ -349,6 +356,7 @@ const Dashboard: React.FC = () => {
                       <td>{movement.processType ?? "-"}</td>
                       <td>{formatWeight(movement.entryWeight)}</td>
                       <td>{formatWeight(movement.exitWeight)}</td>
+                      <td>{formatWeightDifference(movement.weightDifference)}</td>
                     </tr>
                   );
                 })

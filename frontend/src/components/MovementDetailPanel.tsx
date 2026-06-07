@@ -23,6 +23,12 @@ function formatWeight(value?: number): string {
   return `${new Intl.NumberFormat("pt-BR").format(value)} kg`;
 }
 
+function formatWeightDifference(value?: number): string {
+  if (value === undefined) return "-";
+  const prefix = value > 0 ? "+" : "";
+  return `${prefix}${new Intl.NumberFormat("pt-BR").format(value)} kg`;
+}
+
 function getTimelineEvents(movement: YardMovement): YardMovementEvent[] {
   const events =
     movement.events && movement.events.length > 0
@@ -124,6 +130,18 @@ const MovementDetailPanel: React.FC<MovementDetailPanelProps> = ({
         <strong>{movement.dock ?? "-"}</strong>
       </div>
       <div>
+        <span>Peso Entrada</span>
+        <strong>{formatWeight(movement.entryWeight)}</strong>
+      </div>
+      <div>
+        <span>Peso Saida</span>
+        <strong>{formatWeight(movement.exitWeight)}</strong>
+      </div>
+      <div>
+        <span>Diferenca</span>
+        <strong>{formatWeightDifference(movement.weightDifference)}</strong>
+      </div>
+      <div>
         <span>Motivo</span>
         <strong>{movement.statusReason ?? "-"}</strong>
       </div>
@@ -167,4 +185,3 @@ const MovementDetailPanel: React.FC<MovementDetailPanelProps> = ({
 );
 
 export default MovementDetailPanel;
-

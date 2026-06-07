@@ -47,7 +47,17 @@ describe("Yard movement entity", () => {
         expect(sut.status).toBe(YardMovementStatus.FINISHED);
         expect(sut.entryWeight).toBe(12500);
         expect(sut.exitWeight).toBe(8400);
+        expect(sut.weightDifference).toBe(-4100);
         expect(sut.releasedBy).toBe("Carlos Operador");
+    });
+
+    it("should calculate signed weight difference when both weights exist", () => {
+        const sut = makeYardMovement({
+            entryWeight: 9000,
+            exitWeight: 11250,
+        });
+
+        expect(sut.weightDifference).toBe(2250);
     });
 
     it("should not be able to skip entry weighing when weighing is required", () => {

@@ -1,7 +1,7 @@
-import React, { useCallback } from 'react';
+import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { LogOut } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/auth-context';
 import './Header.css';
 
 const AUTH_ROUTES = new Set<string>(['/login', '/register']);
@@ -23,10 +23,6 @@ const Header: React.FC = () => {
   if (AUTH_ROUTES.has(location.pathname)) {
     return null;
   }
-
-  const handleLogout = useCallback((): void => {
-    void logout();
-  }, [logout]);
 
   return (
     <header className="header">
@@ -69,7 +65,7 @@ const Header: React.FC = () => {
           <button
             type="button"
             className="header-user__logout"
-            onClick={handleLogout}
+            onClick={() => void logout()}
             aria-label="Sair"
             title="Sair"
           >

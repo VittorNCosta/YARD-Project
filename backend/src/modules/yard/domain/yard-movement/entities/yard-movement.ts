@@ -103,6 +103,17 @@ export class YardMovement {
         this.updatedAt = props.updatedAt;
     }
 
+    get weightDifference(): number | undefined {
+        if (
+            !this.hasPositiveWeight(this.entryWeight) ||
+            !this.hasPositiveWeight(this.exitWeight)
+        ) {
+            return undefined;
+        }
+
+        return this.exitWeight! - this.entryWeight!;
+    }
+
     static create(
         props: Optional<
             YardMovementProps,

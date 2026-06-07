@@ -6,7 +6,6 @@ export const createYardMovementBodySchema = z.object({
     cargoType: z.string().min(1),
     driverCpf: z.string().optional(),
     processType: z.string().optional(),
-    weighingRequired: z.boolean().optional(),
     arrivalDate: z.coerce.date().optional(),
 });
 

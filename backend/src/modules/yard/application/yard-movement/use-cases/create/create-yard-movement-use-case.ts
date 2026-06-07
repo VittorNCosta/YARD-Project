@@ -15,7 +15,6 @@ export interface CreateYardMovementUseCaseRequest {
     createdBy?: string;
     driverCpf?: string;
     processType?: string;
-    weighingRequired?: boolean;
     status?: YardMovementStatus;
     arrivalDate?: Date;
     databaseOptions?: DatabaseOptions;
@@ -87,8 +86,7 @@ export class CreateYardMovementUseCase {
             driverCpf: data.driverCpf,
             cargoType: data.cargoType,
             processType: data.processType,
-            weighingRequired:
-                data.weighingRequired ?? vehicle.weighingRequired ?? false,
+            weighingRequired: vehicle.weighingRequired ?? false,
             status: data.status,
             arrivalDate: data.arrivalDate,
             createdBy: data.createdBy,
